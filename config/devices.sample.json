@@ -1,0 +1,18 @@
+[
+  {
+    "name": "Smart Plug+",
+    "id": "blahblah",
+    "key": "secret123",
+    "ip": "192.168.1.111",
+    "type": "Plug",
+    "version": 3.4
+  },
+  {
+    "name": "Cover",
+    "id": "ups",
+    "key": "donttellanyone",
+    "type": "Cover",
+    "ip": "192.168.1.222",
+    "version": 3.3
+  }
+]
