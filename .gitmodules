@@ -1,0 +1,3 @@
+[submodule "lib/tuya-driver"]
+	path = lib/tuya-driver
+	url = https://github.com/qbikez/tuya-driver
