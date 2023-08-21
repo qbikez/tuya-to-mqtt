@@ -4,7 +4,7 @@ import * as mqtt from "mqtt";
 export type DeviceType = "Cover" | "Switch" | "Plug";
 
 export type DeviceConfig = DeviceOptions & {
-  type: DeviceType;
+  type?: DeviceType;
   name: string;
 };
 
