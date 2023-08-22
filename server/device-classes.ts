@@ -115,9 +115,10 @@ export class Cover extends DeviceBase {
   private static readonly positionClosed = 100;
   private static readonly positionOpen = 0;
   private static readonly positionUnknown = 50;
+
   public override type: DeviceType = "cover";
+  
   private state: CoverState = "unknown";
-  private prevState: CoverState = "unknown";
   private lastMove: Direction = "up";
   private position: number = 0;
 
@@ -155,7 +156,6 @@ export class Cover extends DeviceBase {
   }
 
   override onStateChange(dps: DataPointSet) {
-    this.prevState = this.state;
     const baseState = dps["1"] as CoverStateDp;
     const isMoving = baseState == "open" || baseState == "close";
     if (isMoving) {
