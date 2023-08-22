@@ -8,16 +8,25 @@ const log = logfactory("tuya-to-mqtt");
 
 const app = express();
 
+const config = {
+  mqtt: {
+    host: "192.168.1.9",
+    discoveryTopic: "homeassistant/discovery_test"
+  },
+}
+
 log("connecting MQTT client");
 
 const mqttClient = await mqtt.connectAsync({
-  host: "192.168.1.9"
+  host: config.mqtt.host
 });
 
 log("starting device dicsovery");
 
 const devices = initDevices("config/devices.json");
-listenToBroadcast(devices);
+listenToBroadcast(devices, (device) => {  
+  mqttClient.publish("discoveryTopic", JSON.stringify(device.config));
+});
 
 app.get("/", (_, res) => {
   res.send("Hello World!");

@@ -3,13 +3,13 @@ import TuyaDevice from "../lib/tuya-driver/src/device";
 import { Find } from "../lib/tuya-driver/src/find";
 
 import logfactory from "debug";
-import { DeviceConfig } from "./device-classes";
+import { DeviceBase, DeviceConfig, createDevice } from "./device-classes";
 const log = logfactory("tuya-to-mqtt");
-
 
 export type DeviceWrapper = {
   config: DeviceConfig;
   client?: TuyaDevice;
+  device?: DeviceBase;
 };
 
 export function initDevices(configPath: string) {
@@ -21,7 +21,10 @@ export function initDevices(configPath: string) {
   });
 }
 
-export function listenToBroadcast(devices: DeviceWrapper[]) {
+export function listenToBroadcast(
+  devices: DeviceWrapper[],
+  onUpdate: (device: DeviceWrapper) => void
+) {
   const find = new Find();
   find.on("broadcast", (msg) => {
     const device = devices.find((d) => d.config.id == msg.gwId);
@@ -34,7 +37,10 @@ export function listenToBroadcast(devices: DeviceWrapper[]) {
 
     if (!device.client) {
       device.client = new TuyaDevice(device.config);
+      device.device = createDevice(msg, device.config, device.client);
     }
+
+    onUpdate(device);
   });
   find.start();
 }

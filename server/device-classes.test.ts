@@ -1,7 +1,30 @@
 import { describe } from "node:test";
-import { Cover, DeviceConfig } from "./device-classes";
+import { Cover, DeviceConfig, createDevice } from "./device-classes";
 import Device from "../lib/tuya-driver/src/device";
 import { MqttClient } from "mqtt";
+import { DiscoveryMessage } from "../lib/tuya-driver/src/find";
+
+describe("factory", () => {
+  it("creates device based on configured type", () => {
+    const device = createDevice(
+      {} as DiscoveryMessage,
+      { type: "Cover", name: "my cover" } as DeviceConfig,
+      {} as Device
+    );
+
+    expect(device.type).toBe("Cover");
+  });
+
+  it("creates device based on productKey", () => {
+    const device = createDevice(
+      { productKey: "aacztutbu69gdpdf" } as DiscoveryMessage,
+      { name: "my cover" } as DeviceConfig,
+      {} as Device
+    );
+
+    expect(device.type).toBe("Cover");
+  });
+});
 
 describe("cover", () => {
   it("discoveryPayload", () => {
@@ -25,12 +48,16 @@ describe("cover", () => {
     };
 
     const cfg: DeviceConfig = {
-        id: "bf9346c6635dfb4b38sj2p",
-        name: "roleta Jeremi",     
-        ip: "",
-        key: ""   
+      id: "bf9346c6635dfb4b38sj2p",
+      name: "roleta Jeremi",
+      ip: "",
+      key: "",
     };
-    const device = new Cover(cfg, new Device(cfg), undefined as any as MqttClient);
+    const device = new Cover(
+      cfg,
+      new Device(cfg),
+      undefined as any as MqttClient
+    );
 
     const payload = device.discoveryPayload("tuya/roleta_jeremi/");
     expect(payload).toEqual(expected);
