@@ -11,7 +11,7 @@ const app = express();
 const config = {
   mqtt: {
     host: "192.168.1.9",
-    discoveryTopic: "homeassistant/discovery_test",
+    discoveryTopic: "homeassistant/discovery",
     deviceTopic: "tuya2"
   },
 }

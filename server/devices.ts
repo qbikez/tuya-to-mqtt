@@ -39,6 +39,9 @@ export function listenToBroadcast(
       device.client = new TuyaDevice(device.config);
       device.device = createDevice(msg, device.config, device.client);
     }
+    if (device.client && !device.client.connected) {
+      device.client.connect();
+    }
 
     onUpdate(device);
   });

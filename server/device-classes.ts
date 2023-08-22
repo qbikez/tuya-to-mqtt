@@ -1,4 +1,7 @@
-import TuyaDevice, { DeviceOptions } from "../lib/tuya-driver/src/device";
+import TuyaDevice, {
+  DataPointSet,
+  DeviceOptions,
+} from "../lib/tuya-driver/src/device";
 import { DiscoveryMessage } from "../lib/tuya-driver/src/find";
 
 export type DeviceType = "cover" | "switch" | "plug" | "generic";
@@ -47,9 +50,12 @@ export class DeviceBase {
   public name: string;
 
   constructor(protected options: DeviceConfig, protected client: TuyaDevice) {
-    this.displayName = options.name ?? options.id;
+    this.displayName = (options.name ?? options.id) + "_2";
     this.name = options.name.replace(/ /g, "_").toLowerCase() + "_2";
+    client.on("state-change", (state) => this.onStateChange(state));
   }
+
+  protected onStateChange(state: DataPointSet) {}
 
   public discoveryTopic(discoveryPrefix: string) {
     return `${discoveryPrefix}/${this.type}/${this.name}/config`;
@@ -58,7 +64,7 @@ export class DeviceBase {
   public discoveryMessage(baseTopic: string) {
     const deviceTopic = `${baseTopic}/${this.name}`;
     const deviceData = {
-      ids: [this.options.id],
+      ids: [this.options.id + "_2"],
       name: this.displayName,
       mf: "Tuya",
     };
@@ -76,11 +82,14 @@ export class DeviceBase {
     return discoveryData;
   }
 
-  public stateMessage(baseTopic: string): Record<string, object | string | number> {
+  public stateMessage(
+    baseTopic: string
+  ): Record<string, object | string | number> {
     const deviceTopic = `${baseTopic}/${this.name}`;
     return {
       [`${deviceTopic}/state`]: {},
       [`${deviceTopic}/status`]: this.client.connected ? "online" : "offline",
+      [`${deviceTopic}/dps`]: this.client.getState(),
     };
   }
 }
@@ -99,9 +108,17 @@ export class Plug extends DeviceBase {
   }
 }
 
+type CoverState = "open" | "opening" | "closed" | "closing" | "unknown";
+type CoverStateDp = "close" | "open" | "stop";
+type Direction = "up" | "down";
 export class Cover extends DeviceBase {
+  private static readonly positionClosed = 100;
+  private static readonly positionOpen = 0;
+  private static readonly positionUnknown = 50;
   public override type: DeviceType = "cover";
-  private state: string = 'closed';
+  private state: CoverState = "unknown";
+  private prevState: CoverState = "unknown";
+  private lastMove: Direction = "up";
   private position: number = 0;
 
   constructor(options: DeviceConfig, client: TuyaDevice) {
@@ -135,5 +152,45 @@ export class Cover extends DeviceBase {
       [`${deviceTopic}/state`]: this.state,
       [`${deviceTopic}/position`]: this.position,
     };
+  }
+
+  override onStateChange(dps: DataPointSet) {
+    this.prevState = this.state;
+    const baseState = dps["1"] as CoverStateDp;
+    const isMoving = baseState == "open" || baseState == "close";
+    if (isMoving) {
+      this.lastMove = baseState == "open" ? "up" : "down";
+    }
+    this.state = this.translateState(baseState);
+    this.position = this.getPosition();
+  }
+
+  private getPosition(): number {
+    return this.state == "open"
+      ? Cover.positionOpen
+      : this.state == "closed"
+      ? Cover.positionClosed
+      : this.lastMove == "up"
+      ? Cover.positionOpen
+      : this.lastMove == "down"
+      ? Cover.positionClosed
+      : Cover.positionUnknown;
+  }
+
+  private translateState(state: CoverStateDp): CoverState {
+    switch (state) {
+      case "open":
+        return "opening";
+      case "close":
+        return "closing";
+      case "stop":
+        return this.lastMove == "up"
+          ? "open"
+          : this.lastMove == "down"
+          ? "closed"
+          : "unknown";
+      default:
+        return "unknown";
+    }
   }
 }
