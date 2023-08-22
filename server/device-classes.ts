@@ -9,22 +9,27 @@ export type DeviceConfig = DeviceOptions & {
 };
 
 export class DeviceBase {
-  constructor(protected options: DeviceConfig) {}
+  public displayName: string;
+  public name: string;
+  constructor(protected options: DeviceConfig) {
+    this.displayName = options.name ?? options.id;
+    this.name = options.name.replace(/ /g, "_").toLowerCase();
+  }
 
   public discoveryPayload(baseTopic: string) {
     const deviceData = {
       ids: [this.options.id],
-      name: this.options.name ?? this.options.id,
+      name: this.displayName,
       mf: "Tuya",
     };
     const discoveryData = {
-      name: this.options.name ?? this.options.id,
+      name: this.name,
       state_topic: `${baseTopic}state`,
       command_topic: `${baseTopic}command`,
       availability_topic: `${baseTopic}status`,
       payload_available: "online",
       payload_not_available: "offline",
-      unique_id: this.options.name,
+      unique_id: this.name,
       device: deviceData,
     };
 
@@ -43,8 +48,13 @@ export class Cover extends DeviceBase {
 
   public override discoveryPayload(baseTopic: string) {
     const baseData = super.discoveryPayload(baseTopic);
+    const device = {
+      ...baseData.device,
+      mdl: "Cover",
+    };
     const discoveryData = {
       ...baseData,
+      device,
       position_topic: `${baseTopic}position`,
       set_position_topic: `${baseTopic}set_position`,
       optimistic: true,
