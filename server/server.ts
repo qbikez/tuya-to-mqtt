@@ -32,6 +32,11 @@ listenToBroadcast(devices, (deviceWrapper) => {
   const discoveryTopic = device.discoveryTopic(config.mqtt.discoveryTopic);
 
   mqttClient.publish(discoveryTopic, JSON.stringify(message));
+
+  const stateMessage = device.stateMessage(config.mqtt.deviceTopic);
+  for (const [topic, payload] of Object.entries(stateMessage)) {
+    mqttClient.publish(topic, JSON.stringify(payload));
+  }
 });
 
 app.get("/", (_, res) => {

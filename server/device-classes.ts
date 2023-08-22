@@ -13,7 +13,8 @@ export function createDevice(
   config: DeviceConfig,
   client: TuyaDevice
 ) {
-  const modelType = config.type?.toLocaleLowerCase() ?? getModel(msg.productKey);
+  const modelType =
+    config.type?.toLocaleLowerCase() ?? getModel(msg.productKey);
 
   switch (modelType) {
     case "cover":
@@ -44,7 +45,7 @@ export class DeviceBase {
   public type: DeviceType = "generic";
   public displayName: string;
   public name: string;
-  
+
   constructor(protected options: DeviceConfig, protected client: TuyaDevice) {
     this.displayName = options.name ?? options.id;
     this.name = options.name.replace(/ /g, "_").toLowerCase() + "_2";
@@ -74,6 +75,14 @@ export class DeviceBase {
 
     return discoveryData;
   }
+
+  public stateMessage(baseTopic: string): Record<string, object | string | number> {
+    const deviceTopic = `${baseTopic}/${this.name}`;
+    return {
+      [`${deviceTopic}/state`]: {},
+      [`${deviceTopic}/status`]: this.client.connected ? "online" : "offline",
+    };
+  }
 }
 
 export class Switch extends DeviceBase {
@@ -92,6 +101,9 @@ export class Plug extends DeviceBase {
 
 export class Cover extends DeviceBase {
   public override type: DeviceType = "cover";
+  private state: string = 'closed';
+  private position: number = 0;
+
   constructor(options: DeviceConfig, client: TuyaDevice) {
     super(options, client);
   }
@@ -112,6 +124,16 @@ export class Cover extends DeviceBase {
       optimistic: true,
     };
 
-    return message ;
+    return message;
+  }
+
+  public override stateMessage(baseTopic: string) {
+    const baseData = super.stateMessage(baseTopic);
+    const deviceTopic = `${baseTopic}/${this.name}`;
+    return {
+      ...baseData,
+      [`${deviceTopic}/state`]: this.state,
+      [`${deviceTopic}/position`]: this.position,
+    };
   }
 }
