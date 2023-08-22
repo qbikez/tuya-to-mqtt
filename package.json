@@ -4,8 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "start": "vite",
+    "start:silent": "vite",
     "start:debug": "cross-env DEBUG=tuya-to-mqtt,tuya-driver:* vite",
+    "start": "npm run start:debug",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "test": "vitest"

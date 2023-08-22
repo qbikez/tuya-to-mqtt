@@ -1,7 +1,7 @@
 import TuyaDevice, { DeviceOptions } from "../lib/tuya-driver/src/device";
 import { DiscoveryMessage } from "../lib/tuya-driver/src/find";
 
-export type DeviceType = "Cover" | "Switch" | "Plug" | "Generic";
+export type DeviceType = "cover" | "switch" | "plug" | "generic";
 
 export type DeviceConfig = DeviceOptions & {
   type?: DeviceType;
@@ -13,14 +13,14 @@ export function createDevice(
   config: DeviceConfig,
   client: TuyaDevice
 ) {
-  const modelType = config.type ?? getModel(msg.productKey);
+  const modelType = config.type?.toLocaleLowerCase() ?? getModel(msg.productKey);
 
   switch (modelType) {
-    case "Cover":
+    case "cover":
       return new Cover(config, client);
-    case "Switch":
+    case "switch":
       return new Switch(config, client);
-    case "Plug":
+    case "plug":
       return new Plug(config, client);
     default:
       return new DeviceBase(config, client);
@@ -29,26 +29,33 @@ export function createDevice(
 
 export function getModel(productKey: string): DeviceType {
   const knownModels: Record<DeviceType, string[]> = {
-    Cover: ["aacztutbu69gdpdf"],
-    Switch: ["key7axydcvmea3x9"],
-    Plug: ["keyjup78v54myhan"],
-    Generic: [],
+    cover: ["aacztutbu69gdpdf"],
+    switch: ["key7axydcvmea3x9"],
+    plug: ["keyjup78v54myhan"],
+    generic: [],
   };
-  return Object.entries(knownModels).find(([_, models]) =>
-    models.includes(productKey)
-  )?.[0] as DeviceType ?? "Generic";
+  return (
+    (Object.entries(knownModels).find(([_, models]) =>
+      models.includes(productKey)
+    )?.[0] as DeviceType) ?? "generic"
+  );
 }
 export class DeviceBase {
-  public type: DeviceType = "Generic";
+  public type: DeviceType = "generic";
   public displayName: string;
   public name: string;
-
+  
   constructor(protected options: DeviceConfig, protected client: TuyaDevice) {
     this.displayName = options.name ?? options.id;
-    this.name = options.name.replace(/ /g, "_").toLowerCase();
+    this.name = options.name.replace(/ /g, "_").toLowerCase() + "_2";
   }
 
-  public discoveryPayload(baseTopic: string) {
+  public discoveryTopic(discoveryPrefix: string) {
+    return `${discoveryPrefix}/${this.type}/${this.name}/config`;
+  }
+
+  public discoveryMessage(baseTopic: string) {
+    const deviceTopic = `${baseTopic}/${this.name}`;
     const deviceData = {
       ids: [this.options.id],
       name: this.displayName,
@@ -56,9 +63,9 @@ export class DeviceBase {
     };
     const discoveryData = {
       name: this.name,
-      state_topic: `${baseTopic}state`,
-      command_topic: `${baseTopic}command`,
-      availability_topic: `${baseTopic}status`,
+      state_topic: `${deviceTopic}/state`,
+      command_topic: `${deviceTopic}/command`,
+      availability_topic: `${deviceTopic}/status`,
       payload_available: "online",
       payload_not_available: "offline",
       unique_id: this.name,
@@ -70,50 +77,41 @@ export class DeviceBase {
 }
 
 export class Switch extends DeviceBase {
-  public override type: DeviceType = "Switch";
-  constructor(
-    options: DeviceConfig,
-    client: TuyaDevice,
-  ) {
+  public override type: DeviceType = "switch";
+  constructor(options: DeviceConfig, client: TuyaDevice) {
     super(options, client);
   }
-
 }
 
 export class Plug extends DeviceBase {
-  public override type: DeviceType = "Plug";
-  constructor(
-    options: DeviceConfig,
-    client: TuyaDevice,
-  ) {
+  public override type: DeviceType = "plug";
+  constructor(options: DeviceConfig, client: TuyaDevice) {
     super(options, client);
   }
-
 }
 
 export class Cover extends DeviceBase {
-  public override type: DeviceType = "Cover";
-  constructor(
-    options: DeviceConfig,
-    client: TuyaDevice,
-  ) {
+  public override type: DeviceType = "cover";
+  constructor(options: DeviceConfig, client: TuyaDevice) {
     super(options, client);
   }
 
-  public override discoveryPayload(baseTopic: string) {
-    const baseData = super.discoveryPayload(baseTopic);
+  public override discoveryMessage(baseTopic: string) {
+    const baseData = super.discoveryMessage(baseTopic);
+    const deviceTopic = `${baseTopic}/${this.name}`;
+
     const device = {
       ...baseData.device,
       mdl: "Cover",
     };
-    const discoveryData = {
+    const message = {
       ...baseData,
       device,
-      position_topic: `${baseTopic}position`,
-      set_position_topic: `${baseTopic}set_position`,
+      position_topic: `${deviceTopic}/position`,
+      set_position_topic: `${deviceTopic}/set_position`,
       optimistic: true,
     };
 
-    return discoveryData;
+    return message ;
   }
 }

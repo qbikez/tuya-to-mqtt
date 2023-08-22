@@ -11,7 +11,8 @@ const app = express();
 const config = {
   mqtt: {
     host: "192.168.1.9",
-    discoveryTopic: "homeassistant/discovery_test"
+    discoveryTopic: "homeassistant/discovery_test",
+    deviceTopic: "tuya2"
   },
 }
 
@@ -24,8 +25,13 @@ const mqttClient = await mqtt.connectAsync({
 log("starting device dicsovery");
 
 const devices = initDevices("config/devices.json");
-listenToBroadcast(devices, (device) => {  
-  mqttClient.publish("discoveryTopic", JSON.stringify(device.config));
+listenToBroadcast(devices, (deviceWrapper) => {  
+  const { device } = deviceWrapper;
+  if (!device) return;
+  const message = device.discoveryMessage(config.mqtt.deviceTopic);
+  const discoveryTopic = device.discoveryTopic(config.mqtt.discoveryTopic);
+
+  mqttClient.publish(discoveryTopic, JSON.stringify(message));
 });
 
 app.get("/", (_, res) => {

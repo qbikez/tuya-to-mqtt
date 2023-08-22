@@ -1,14 +1,13 @@
 import { describe } from "node:test";
 import { Cover, DeviceConfig, createDevice } from "./device-classes";
 import Device from "../lib/tuya-driver/src/device";
-import { MqttClient } from "mqtt";
 import { DiscoveryMessage } from "../lib/tuya-driver/src/find";
 
 describe("factory", () => {
   it("creates device based on configured type", () => {
     const device = createDevice(
       {} as DiscoveryMessage,
-      { type: "Cover", name: "my cover" } as DeviceConfig,
+      { type: "cover", name: "my cover" } as DeviceConfig,
       {} as Device
     );
 
@@ -53,13 +52,9 @@ describe("cover", () => {
       ip: "",
       key: "",
     };
-    const device = new Cover(
-      cfg,
-      new Device(cfg),
-      undefined as any as MqttClient
-    );
+    const device = new Cover(cfg, new Device(cfg));
 
-    const payload = device.discoveryPayload("tuya/roleta_jeremi/");
-    expect(payload).toEqual(expected);
+    const message = device.discoveryMessage("tuya");
+    expect(message).toEqual(expected);
   });
 });
