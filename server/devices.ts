@@ -34,6 +34,7 @@ export function listenToBroadcast(
     }
 
     device.config.ip = msg.ip;
+    device.config.idSuffix = "_2";
 
     if (!device.client) {
       device.client = new TuyaDevice(device.config);

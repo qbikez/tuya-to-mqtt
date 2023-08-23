@@ -9,6 +9,7 @@ export type DeviceType = "cover" | "switch" | "plug" | "generic";
 export type DeviceConfig = DeviceOptions & {
   type?: DeviceType;
   name: string;
+  idSuffix?: string;
 };
 
 export function createDevice(
@@ -50,8 +51,8 @@ export class DeviceBase {
   public name: string;
 
   constructor(protected options: DeviceConfig, protected client: TuyaDevice) {
-    this.displayName = (options.name ?? options.id) + "_2";
-    this.name = options.name.replace(/ /g, "_").toLowerCase() + "_2";
+    this.displayName = (options.name ?? options.id) + (options.idSuffix ?? "");
+    this.name = options.name.replace(/ /g, "_").toLowerCase() + (options.idSuffix ?? "");
     client.on("state-change", (state) => this.onStateChange(state));
   }
 
@@ -64,7 +65,7 @@ export class DeviceBase {
   public discoveryMessage(baseTopic: string) {
     const deviceTopic = `${baseTopic}/${this.name}`;
     const deviceData = {
-      ids: [this.options.id + "_2"],
+      ids: [this.options.id + (this.options.idSuffix ?? "")],
       name: this.displayName,
       mf: "Tuya",
     };
@@ -118,9 +119,9 @@ export class Cover extends DeviceBase {
 
   public override type: DeviceType = "cover";
   
-  private state: CoverState = "unknown";
-  private lastMove: Direction = "up";
-  private position: number = 0;
+  public state: CoverState = "unknown";
+  public lastMove: Direction = "up";
+  public position: number = 0;
 
   constructor(options: DeviceConfig, client: TuyaDevice) {
     super(options, client);
@@ -161,32 +162,32 @@ export class Cover extends DeviceBase {
     if (isMoving) {
       this.lastMove = baseState == "open" ? "up" : "down";
     }
-    this.state = this.translateState(baseState);
-    this.position = this.getPosition();
+    this.state = Cover.translateState(baseState, this.lastMove);
+    this.position = Cover.getPosition(this.state, this.lastMove);
   }
 
-  private getPosition(): number {
-    return this.state == "open"
+  private static getPosition(state: CoverState, lastMove: Direction): number {
+    return state == "open"
       ? Cover.positionOpen
-      : this.state == "closed"
+      : state == "closed"
       ? Cover.positionClosed
-      : this.lastMove == "up"
+      : lastMove == "up"
       ? Cover.positionOpen
-      : this.lastMove == "down"
+      : lastMove == "down"
       ? Cover.positionClosed
       : Cover.positionUnknown;
   }
 
-  private translateState(state: CoverStateDp): CoverState {
+  private static translateState(state: CoverStateDp, lastMove: Direction): CoverState {
     switch (state) {
       case "open":
         return "opening";
       case "close":
         return "closing";
       case "stop":
-        return this.lastMove == "up"
+        return lastMove == "up"
           ? "open"
-          : this.lastMove == "down"
+          : lastMove == "down"
           ? "closed"
           : "unknown";
       default:

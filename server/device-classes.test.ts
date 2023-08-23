@@ -4,24 +4,26 @@ import Device from "../lib/tuya-driver/src/device";
 import { DiscoveryMessage } from "../lib/tuya-driver/src/find";
 
 describe("factory", () => {
+  const deviceConfig = { name: "my cover" } as DeviceConfig;
+
   it("creates device based on configured type", () => {
     const device = createDevice(
       {} as DiscoveryMessage,
-      { type: "cover", name: "my cover" } as DeviceConfig,
-      {} as Device
+      { ...deviceConfig, type: "cover" },
+      new Device(deviceConfig)
     );
 
-    expect(device.type).toBe("Cover");
+    expect(device.type).toBe("cover");
   });
 
   it("creates device based on productKey", () => {
     const device = createDevice(
       { productKey: "aacztutbu69gdpdf" } as DiscoveryMessage,
-      { name: "my cover" } as DeviceConfig,
-      {} as Device
+      deviceConfig,
+      new Device(deviceConfig)
     );
 
-    expect(device.type).toBe("Cover");
+    expect(device.type).toBe("cover");
   });
 });
 
@@ -56,5 +58,24 @@ describe("cover", () => {
 
     const message = device.discoveryMessage("tuya");
     expect(message).toEqual(expected);
+  });
+
+  it("stateChange", () => {
+    const cfg: DeviceConfig = {
+      id: "bf9346c6635dfb4b38sj2p",
+      name: "roleta Jeremi",
+      ip: "",
+      key: "",
+    };
+    const device = new Cover(cfg, new Device(cfg));
+
+    const dps = {
+      "1": "open",
+    };
+
+    device.onStateChange(dps);
+
+    expect(device.position).toBe(0);
+    expect(device.state).toBe("opening");
   });
 });
