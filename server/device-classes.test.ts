@@ -28,6 +28,14 @@ describe("factory", () => {
 });
 
 describe("cover", () => {
+  const cfg: DeviceConfig = {
+    id: "bf9346c6635dfb4b38sj2p",
+    name: "roleta Jeremi",
+    ip: "",
+    key: "",
+  };
+  const coverDevice = new Cover(cfg, new Device(cfg));
+
   it("discoveryPayload", () => {
     const expected = {
       name: "roleta_jeremi",
@@ -48,34 +56,27 @@ describe("cover", () => {
       optimistic: true,
     };
 
-    const cfg: DeviceConfig = {
-      id: "bf9346c6635dfb4b38sj2p",
-      name: "roleta Jeremi",
-      ip: "",
-      key: "",
-    };
-    const device = new Cover(cfg, new Device(cfg));
-
-    const message = device.discoveryMessage("tuya");
+    const message = coverDevice.discoveryMessage("tuya");
     expect(message).toEqual(expected);
   });
 
-  it("stateChange", () => {
-    const cfg: DeviceConfig = {
-      id: "bf9346c6635dfb4b38sj2p",
-      name: "roleta Jeremi",
-      ip: "",
-      key: "",
-    };
-    const device = new Cover(cfg, new Device(cfg));
+  describe("stateChange", () => {
+    const changes = [
+      { sequence: ["", "open"], state: "opening", position: 0 },
+      { sequence: ["open", "stop"], state: "open", position: 0 },
+      { sequence: ["open", "close"], state: "closing", position: 100 },
+      { sequence: ["close", "stop"], state: "closed", position: 100 },
+    ];
+    it.each(changes)("state change: $sequence => $state", ({ sequence, state, position }) => {
+      coverDevice.state = "unknown";
+      coverDevice.position = 50;
+      coverDevice.lastMove = "up";
 
-    const dps = {
-      "1": "open",
-    };
+      coverDevice.onStateChange({ "1": sequence[0] });
+      coverDevice.onStateChange({ "1": sequence[1] });
 
-    device.onStateChange(dps);
-
-    expect(device.position).toBe(0);
-    expect(device.state).toBe("opening");
+      expect(coverDevice.state).toBe(state);
+      expect(coverDevice.position).toBe(position);
+    });
   });
 });
