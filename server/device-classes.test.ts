@@ -1,7 +1,15 @@
 import { describe } from "node:test";
-import { Cover, DeviceConfig, createDevice } from "./device-classes";
+import {
+  Cover,
+  CoverState,
+  CoverStateDp,
+  DeviceConfig,
+  createDevice,
+} from "./device-classes";
 import Device from "../lib/tuya-driver/src/device";
 import { DiscoveryMessage } from "../lib/tuya-driver/src/find";
+
+vi.mock("../lib/tuya-driver/src/device");
 
 describe("factory", () => {
   const deviceConfig = { name: "my cover" } as DeviceConfig;
@@ -34,7 +42,8 @@ describe("cover", () => {
     ip: "",
     key: "",
   };
-  const coverDevice = new Cover(cfg, new Device(cfg));
+  const deviceClient = new Device(cfg);
+  const cover = new Cover(cfg, deviceClient);
 
   it("discoveryPayload", () => {
     const expected = {
@@ -56,7 +65,7 @@ describe("cover", () => {
       optimistic: true,
     };
 
-    const message = coverDevice.discoveryMessage("tuya");
+    const message = cover.discoveryMessage("tuya");
     expect(message).toEqual(expected);
   });
 
@@ -67,16 +76,32 @@ describe("cover", () => {
       { sequence: ["open", "close"], state: "closing", position: 100 },
       { sequence: ["close", "stop"], state: "closed", position: 100 },
     ];
-    it.each(changes)("state change: $sequence => $state", ({ sequence, state, position }) => {
-      coverDevice.state = "unknown";
-      coverDevice.position = 50;
-      coverDevice.lastMove = "up";
+    it.each(changes)(
+      "state change: $sequence => $state",
+      ({ sequence, state, position }) => {
+        cover.state = "unknown";
+        cover.position = 50;
+        cover.lastMove = "up";
 
-      coverDevice.onStateChange({ "1": sequence[0] });
-      coverDevice.onStateChange({ "1": sequence[1] });
+        cover.onStateChange({ "1": sequence[0] });
+        cover.onStateChange({ "1": sequence[1] });
 
-      expect(coverDevice.state).toBe(state);
-      expect(coverDevice.position).toBe(position);
+        expect(cover.state).toBe(state);
+        expect(cover.position).toBe(position);
+      }
+    );
+  });
+
+  describe("setState", () => {
+    const changes: Array<{ state: CoverState; dp: CoverStateDp }> = [
+      { state: "open", dp: "open" },
+      { state: "closed", dp: "close" },
+    ];
+
+    it.each(changes)("setState $state => $dp", ({ state, dp }) => {
+      cover.setState(state as CoverState);
+
+      expect(deviceClient.setState).toBeCalledWith({ "1": dp });
     });
   });
 });

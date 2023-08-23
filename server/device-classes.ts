@@ -109,8 +109,8 @@ export class Plug extends DeviceBase {
   }
 }
 
-type CoverState = "open" | "opening" | "closed" | "closing" | "unknown";
-type CoverStateDp = "close" | "open" | "stop";
+export type CoverState = "open" | "opening" | "closed" | "closing" | "unknown";
+export type CoverStateDp = "close" | "open" | "stop";
 type Direction = "up" | "down";
 export class Cover extends DeviceBase {
   private static readonly positionClosed = 100;
@@ -162,8 +162,13 @@ export class Cover extends DeviceBase {
     if (isMoving) {
       this.lastMove = baseState == "open" ? "up" : "down";
     }
-    this.state = Cover.translateState(baseState, this.lastMove);
+    this.state = Cover.toCoverState(baseState, this.lastMove);
     this.position = Cover.getPosition(this.state, this.lastMove);
+  }
+
+  public setState(state: CoverState) {
+    const dp = Cover.fromCoverState(state);
+    this.client.setState({ "1": dp });
   }
 
   private static getPosition(state: CoverState, lastMove: Direction): number {
@@ -178,7 +183,20 @@ export class Cover extends DeviceBase {
       : Cover.positionUnknown;
   }
 
-  private static translateState(state: CoverStateDp, lastMove: Direction): CoverState {
+  private static fromCoverState(state: CoverState): CoverStateDp {
+    switch (state) {
+      case "open":
+      case "opening":
+        return "open";
+      case "closed":
+      case "closing":
+        return "close";
+      default:
+        return "stop";
+    }
+  }
+
+  private static toCoverState(state: CoverStateDp, lastMove: Direction): CoverState {
     switch (state) {
       case "open":
         return "opening";
@@ -194,4 +212,6 @@ export class Cover extends DeviceBase {
         return "unknown";
     }
   }
+
+  
 }
