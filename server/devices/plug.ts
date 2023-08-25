@@ -8,9 +8,9 @@ export class Plug extends DeviceBase {
   }
 
   override discoveryMessage(baseTopic: string) {
-    const baseData = super.discoveryMessage(baseTopic)[`${this.type}/${this.name}/config`];
-
-    const device = baseData.device;
+    const baseData = this.discoveryData(baseTopic);
+    const device = this.deviceData();
+    
     return {
       [`switch/${this.name}/config`]: {
         ...baseData,

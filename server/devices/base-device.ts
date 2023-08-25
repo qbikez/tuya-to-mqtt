@@ -4,6 +4,7 @@ import TuyaDevice, {
 } from "../../lib/tuya-driver/src/device";
 
 import logfactory from "debug";
+import { DiscoveryMessage } from "../../lib/tuya-driver/src/find";
 const log = logfactory("tuya:device");
 
 export type DeviceType = "cover" | "switch" | "plug" | "generic";
@@ -53,14 +54,28 @@ export class DeviceBase {
     return `${baseTopic}/${this.name}`;
   }
 
+  
   public discoveryMessage(baseTopic: string): Record<string, EntityDiscovery> {
     const deviceTopic = this.deviceTopic(baseTopic);
-    const deviceData = {
+    const deviceData = this.deviceData();
+    const discoveryData = this.discoveryData(deviceTopic);
+
+    return { [`${this.type}/${this.name}/config`]: {
+      ...discoveryData,
+      device: deviceData
+    } };
+  }
+
+  protected deviceData(): DeviceDiscovery {
+    return {
       ids: [this.options.id + (this.options.idSuffix ?? "")],
       name: this.displayName,
       mf: "Tuya",
     };
-    const discoveryData = {
+  }
+
+  protected discoveryData(deviceTopic: string): Omit<EntityDiscovery, 'device'> {
+    return {
       name: this.name,
       state_topic: `${deviceTopic}/state`,
       command_topic: `${deviceTopic}/command`,
@@ -68,10 +83,7 @@ export class DeviceBase {
       payload_available: "online",
       payload_not_available: "offline",
       unique_id: this.name,
-      device: deviceData,
     };
-
-    return { [`${this.type}/${this.name}/config`]: discoveryData };
   }
 
   public stateMessage(
