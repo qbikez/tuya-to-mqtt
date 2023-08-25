@@ -22,7 +22,7 @@ export class Cover extends DeviceBase {
   }
 
   public override discoveryMessage(baseTopic: string) {
-    const baseData = super.discoveryMessage(baseTopic)[this.type];
+    const baseData = super.discoveryMessage(baseTopic)[`${this.type}/${this.name}/config`];
     
     const deviceTopic = this.deviceTopic(baseTopic);
 
@@ -39,7 +39,7 @@ export class Cover extends DeviceBase {
     };
 
     return {
-      [this.type]: message,
+      [`${this.type}/${this.name}/config`]: message,
     };
   }
 

@@ -71,7 +71,7 @@ export class DeviceBase {
       device: deviceData,
     };
 
-    return { [this.type]: discoveryData };
+    return { [`${this.type}/${this.name}/config`]: discoveryData };
   }
 
   public stateMessage(

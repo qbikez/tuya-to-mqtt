@@ -23,9 +23,9 @@ export class Switch extends DeviceBase {
   }
 
   override discoveryMessage(baseTopic: string) {
-    const baseData = super.discoveryMessage(baseTopic)[this.type];
+    const baseData = super.discoveryMessage(baseTopic)[`${this.type}/${this.name}/config`];
     return {
-      [this.type]: {
+      [`${this.type}/${this.name}/config`]: {
         device: {
           ...baseData.device,
           mdl: "Switch/Socket",

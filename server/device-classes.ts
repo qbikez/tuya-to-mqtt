@@ -3,6 +3,7 @@ import { DiscoveryMessage } from "../lib/tuya-driver/src/find";
 
 import { DeviceBase, DeviceConfig, DeviceType } from "./devices/base-device";
 import { Cover } from "./devices/cover";
+import { Plug } from "./devices/plug";
 import { Switch } from "./devices/switch";
 
 export function createDevice(
@@ -37,11 +38,4 @@ export function getModel(productKey: string): DeviceType {
       models.includes(productKey)
     )?.[0] as DeviceType) ?? "generic"
   );
-}
-
-export class Plug extends DeviceBase {
-  public override type: DeviceType = "plug";
-  constructor(options: DeviceConfig, client: TuyaDevice) {
-    super(options, client);
-  }
 }
