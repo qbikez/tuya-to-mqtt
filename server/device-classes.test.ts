@@ -3,12 +3,12 @@ import {
   Cover,
   CoverState,
   CoverStateDp,
-  DeviceConfig,
-  createDevice,
-} from "./device-classes";
+} from "./devices/cover";
 import Device from "../lib/tuya-driver/src/device";
 import { DiscoveryMessage } from "../lib/tuya-driver/src/find";
 import { DeviceWrapper, findByTopic } from "./devices";
+import { DeviceConfig } from "./devices/base";
+import { createDevice } from "./device-classes";
 
 vi.mock("../lib/tuya-driver/src/device");
 
@@ -119,7 +119,7 @@ describe("cover", () => {
     ];
 
     it.each(changes)("setState $state => $dp", ({ state, dp }) => {
-      cover.setClientState(state as CoverState);
+      cover.setState(state as CoverState);
 
       expect(deviceClient.setState).toBeCalledWith({ "1": dp });
     });
@@ -149,10 +149,10 @@ describe("cover", () => {
     });
 
     it("set_state", () => {
-      cover.setClientState = vi.fn();
+      cover.setState = vi.fn();
       cover.command("command", "OPEN");
 
-      expect(cover.setClientState).toBeCalledWith("open");
+      expect(cover.setState).toBeCalledWith("open");
     });
   });
 });
