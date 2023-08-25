@@ -1,24 +1,30 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
+    "target": "ES2017",
     "useDefineForClassFields": true,
     "module": "ESNext",
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
-    "types": ["vitest/globals"],
+    "lib": ["ESNext"],
+    "types": ["vitest/globals", "vite"],
     "skipLibCheck": true,
-
+    
     /* Bundler mode */
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noEmit": true,
+    // "moduleResolution": "bundler",
+    // "allowImportingTsExtensions": true,
+    // "resolveJsonModule": true,
+    // "isolatedModules": true,
+    // "noEmit": true,
+    
+    "moduleResolution": "Node",
+    "esModuleInterop": true,
+    "moduleDetection": "auto",
+    "outDir": "dist",
 
     /* Linting */
-    "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
+    "strict": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["server", "clientapp", "lib"]
+  "include": ["server", "lib"],
+  "exclude": ["node_modules", "dist", "lib/**/*.test.ts"]
 }

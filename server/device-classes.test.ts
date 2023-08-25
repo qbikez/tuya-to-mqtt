@@ -8,6 +8,7 @@ import {
 } from "./device-classes";
 import Device from "../lib/tuya-driver/src/device";
 import { DiscoveryMessage } from "../lib/tuya-driver/src/find";
+import { DeviceWrapper, findByTopic } from "./devices";
 
 vi.mock("../lib/tuya-driver/src/device");
 
@@ -69,6 +70,25 @@ describe("cover", () => {
     expect(message).toEqual(expected);
   });
 
+  describe("find by topic", () => {
+    const devices: DeviceWrapper[] = [
+      {
+        config: cfg,
+        device: cover,
+      },
+    ];
+    const cases = [
+      { topic: "tuya/roleta_jeremi/state", expected: cover },
+      { topic: "tuya/roleta_jeremi/set_position", expected: cover },
+      { topic: "tuya/roleta_jeremi", expected: cover },
+    ];
+    it.each(cases)("$topic", ({ topic, expected }) => {
+      const found = findByTopic(devices, "tuya", topic);
+      expect(found).not.toBeNull();
+      expect(found?.device).toBe(expected);
+    });
+  });
+
   describe("stateChange", () => {
     const changes = [
       { sequence: ["", "open"], state: "opening", position: 0 },
@@ -99,9 +119,40 @@ describe("cover", () => {
     ];
 
     it.each(changes)("setState $state => $dp", ({ state, dp }) => {
-      cover.setState(state as CoverState);
+      cover.setClientState(state as CoverState);
 
       expect(deviceClient.setState).toBeCalledWith({ "1": dp });
+    });
+  });
+
+  describe("setPosition", () => {
+    const changes: Array<{ from: number; to: number; dp: CoverStateDp }> = [
+      { from: 0, to: 100, dp: "close" },
+      { from: 100, to: 100, dp: "stop" },
+      { from: 100, to: 0, dp: "open" },
+    ];
+
+    it.each(changes)("setPosition $from => $to: $dp", ({ from, to, dp }) => {
+      cover.position = from;
+      cover.setPosition(to);
+
+      expect(deviceClient.setState).toBeCalledWith({ "1": dp });
+    });
+  });
+
+  describe("commands", () => {
+    it("set_position", () => {
+      cover.setPosition = vi.fn();
+      cover.command("set_position", "100");
+
+      expect(cover.setPosition).toBeCalledWith(100);
+    });
+
+    it("set_state", () => {
+      cover.setClientState = vi.fn();
+      cover.command("command", "OPEN");
+
+      expect(cover.setClientState).toBeCalledWith("open");
     });
   });
 });

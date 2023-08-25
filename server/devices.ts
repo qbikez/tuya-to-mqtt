@@ -4,7 +4,7 @@ import { Find } from "../lib/tuya-driver/src/find";
 
 import logfactory from "debug";
 import { DeviceBase, DeviceConfig, createDevice } from "./device-classes";
-const log = logfactory("tuya-to-mqtt");
+const log = logfactory("tuya:discovery");
 
 export type DeviceWrapper = {
   config: DeviceConfig;
@@ -23,7 +23,7 @@ export function initDevices(configPath: string) {
 
 export function listenToBroadcast(
   devices: DeviceWrapper[],
-  onUpdate: (device: DeviceWrapper) => void
+  onUpdate: (device: DeviceWrapper) => Promise<void>
 ) {
   const find = new Find();
   find.on("broadcast", (msg) => {
@@ -37,14 +37,27 @@ export function listenToBroadcast(
     device.config.idSuffix = "_2";
 
     if (!device.client) {
+      log(`discovered NEW device ${device.config.name} at ${device.config.ip}`);
+  
       device.client = new TuyaDevice(device.config);
       device.device = createDevice(msg, device.config, device.client);
     }
     if (device.client && !device.client.connected) {
-      device.client.connect();
+      log(`connecting device ${device.config.name} at ${device.config.ip}`);
+      device.client.connect({ enableHeartbeat: false });
     }
 
-    onUpdate(device);
+    void onUpdate(device);
   });
   find.start();
+}
+
+export function findByTopic(
+  devices: DeviceWrapper[],
+  baseTopic: string,
+  topic: string
+): DeviceWrapper | undefined {
+  return devices.find(
+    (d) => !!d.device && topic.startsWith(d.device.deviceTopic(baseTopic))
+  );
 }

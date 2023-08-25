@@ -4,6 +4,9 @@ import TuyaDevice, {
 } from "../lib/tuya-driver/src/device";
 import { DiscoveryMessage } from "../lib/tuya-driver/src/find";
 
+import logfactory from "debug";
+const log = logfactory("tuya:device");
+
 export type DeviceType = "cover" | "switch" | "plug" | "generic";
 
 export type DeviceConfig = DeviceOptions & {
@@ -52,7 +55,8 @@ export class DeviceBase {
 
   constructor(protected options: DeviceConfig, protected client: TuyaDevice) {
     this.displayName = (options.name ?? options.id) + (options.idSuffix ?? "");
-    this.name = options.name.replace(/ /g, "_").toLowerCase() + (options.idSuffix ?? "");
+    this.name =
+      options.name.replace(/ /g, "_").toLowerCase() + (options.idSuffix ?? "");
     client.on("state-change", (state) => this.onStateChange(state));
   }
 
@@ -62,8 +66,12 @@ export class DeviceBase {
     return `${discoveryPrefix}/${this.type}/${this.name}/config`;
   }
 
+  public deviceTopic(baseTopic: string) {
+    return `${baseTopic}/${this.name}`;
+  }
+
   public discoveryMessage(baseTopic: string) {
-    const deviceTopic = `${baseTopic}/${this.name}`;
+    const deviceTopic = this.deviceTopic(baseTopic);
     const deviceData = {
       ids: [this.options.id + (this.options.idSuffix ?? "")],
       name: this.displayName,
@@ -86,12 +94,21 @@ export class DeviceBase {
   public stateMessage(
     baseTopic: string
   ): Record<string, object | string | number> {
-    const deviceTopic = `${baseTopic}/${this.name}`;
+    const deviceTopic = this.deviceTopic(baseTopic);
     return {
       [`${deviceTopic}/state`]: {},
       [`${deviceTopic}/status`]: this.client.connected ? "online" : "offline",
       [`${deviceTopic}/dps`]: this.client.getState(),
     };
+  }
+
+  public command(command: string, arg1: string) {
+    throw new Error("Method not implemented.");
+  }
+
+  protected setClientState(message: DataPointSet) {
+    log(`sending to ${this.name}`, message);
+    this.client.setState(message);
   }
 }
 
@@ -110,6 +127,7 @@ export class Plug extends DeviceBase {
 }
 
 export type CoverState = "open" | "opening" | "closed" | "closing" | "unknown";
+export type CoverStateCommand = "open" | "close" | "stop";
 export type CoverStateDp = "close" | "open" | "stop";
 type Direction = "up" | "down";
 export class Cover extends DeviceBase {
@@ -118,7 +136,7 @@ export class Cover extends DeviceBase {
   private static readonly positionUnknown = 50;
 
   public override type: DeviceType = "cover";
-  
+
   public state: CoverState = "unknown";
   public lastMove: Direction = "up";
   public position: number = 0;
@@ -129,7 +147,7 @@ export class Cover extends DeviceBase {
 
   public override discoveryMessage(baseTopic: string) {
     const baseData = super.discoveryMessage(baseTopic);
-    const deviceTopic = `${baseTopic}/${this.name}`;
+    const deviceTopic = this.deviceTopic(baseTopic);
 
     const device = {
       ...baseData.device,
@@ -166,9 +184,28 @@ export class Cover extends DeviceBase {
     this.position = Cover.getPosition(this.state, this.lastMove);
   }
 
-  public setState(state: CoverState) {
+  public setState(state: CoverState | CoverStateCommand) {
     const dp = Cover.fromCoverState(state);
-    this.client.setState({ "1": dp });
+    this.setClientState({ "1": dp });
+  }
+  public setPosition(position: number) {
+    const dp = Cover.fromPosition(position, this.position);
+    this.setClientState({ "1": dp });
+  }
+
+  override command(command: string, arg1: string) {
+    switch (command) {
+      case "set_position":
+        const position = parseInt(arg1);
+        this.setPosition(position);
+        return;
+      case "command": // open, close, stop
+        const state = arg1.toLowerCase();
+        this.setState(state as CoverStateCommand);
+        return;
+      default:
+        throw new Error(`Unknown command ${command} for device ${this.type}`);
+    }
   }
 
   private static getPosition(state: CoverState, lastMove: Direction): number {
@@ -183,7 +220,9 @@ export class Cover extends DeviceBase {
       : Cover.positionUnknown;
   }
 
-  private static fromCoverState(state: CoverState): CoverStateDp {
+  private static fromCoverState(
+    state: CoverState | CoverStateCommand
+  ): CoverStateDp {
     switch (state) {
       case "open":
       case "opening":
@@ -191,12 +230,27 @@ export class Cover extends DeviceBase {
       case "closed":
       case "closing":
         return "close";
-      default:
+      case "stop":
         return "stop";
+      default:
+        throw new Error(`Unknown DP state ${state}`);
     }
   }
 
-  private static toCoverState(state: CoverStateDp, lastMove: Direction): CoverState {
+  private static fromPosition(newPosition: number, currentPosition: number) {
+    if (newPosition > currentPosition) {
+      return "open";
+    } else if (newPosition < currentPosition) {
+      return "close";
+    } else {
+      return "stop";
+    }
+  }
+
+  private static toCoverState(
+    state: CoverStateDp,
+    lastMove: Direction
+  ): CoverState {
     switch (state) {
       case "open":
         return "opening";
@@ -209,9 +263,7 @@ export class Cover extends DeviceBase {
           ? "closed"
           : "unknown";
       default:
-        return "unknown";
+        throw new Error(`Unknown target state ${state}`);
     }
   }
-
-  
 }
