@@ -1,4 +1,4 @@
-import { DeviceBase, DeviceConfig, DeviceType } from "./base";
+import { DeviceBase, DeviceConfig, DeviceType } from "./base-device";
 import TuyaDevice, { DataPointSet } from "../../lib/tuya-driver/src/device";
 
 export type CoverState = "open" | "opening" | "closed" | "closing" | "unknown";
@@ -59,16 +59,7 @@ export class Cover extends DeviceBase {
     this.state = Cover.toCoverState(baseState, this.lastMove);
     this.position = Cover.getPosition(this.state, this.lastMove);
   }
-
-  public setState(state: CoverState | CoverStateCommand) {
-    const dp = Cover.fromCoverState(state);
-    this.setClientState({ "1": dp });
-  }
-  public setPosition(position: number) {
-    const dp = Cover.fromPosition(position, this.position);
-    this.setClientState({ "1": dp });
-  }
-
+  
   override command(command: string, arg1: string) {
     switch (command) {
       case "set_position":
@@ -82,6 +73,15 @@ export class Cover extends DeviceBase {
       default:
         throw new Error(`Unknown command ${command} for device ${this.type}`);
     }
+  }
+  
+  public setState(state: CoverState | CoverStateCommand) {
+    const dp = Cover.fromCoverState(state);
+    this.setClientState({ "1": dp });
+  }
+  public setPosition(position: number) {
+    const dp = Cover.fromPosition(position, this.position);
+    this.setClientState({ "1": dp });
   }
 
   private static getPosition(state: CoverState, lastMove: Direction): number {

@@ -21,11 +21,13 @@ mqttlog("connecting MQTT client");
 const mqttClient = mqtt.connect({
   host: config.mqtt.host,
   port: 1883,
-  reconnectPeriod: 1000,
+  reconnectPeriod: 100,
+  clientId: "tuya2",
+  //log: mqttlog,
 });
 
 mqttClient.on("error", (error) => {
-  mqttlog("Unable to connect to MQTT server", error);
+  mqttlog("MQTT error", error);
 });
 mqttClient.on("connect", async () => {
   mqttlog("Connected to MQTT server");
@@ -35,12 +37,18 @@ mqttClient.on("connect", async () => {
   mqttlog(`subscribed to ${topic}`, grants);
 });
 mqttClient.on("reconnect", () => {
-  if (mqttClient.connected) {
-    mqttlog("Connection to MQTT server lost. Attempting to reconnect...");
-  } else {
-    mqttlog("Unable to connect to MQTT server");
-  }
+    mqttlog(`MQTT reconnect (connected=${mqttClient.connected} reconnecting=${mqttClient.reconnecting})`);
 });
+mqttClient.on("disconnect", () => {
+    mqttlog(`MQTT disconnect`);
+});
+mqttClient.on("offline", () => {
+  mqttlog(`MQTT offline`);
+});
+mqttClient.on("close", () => {
+  mqttlog(`MQTT close`);
+});
+
 
 log("starting device dicsovery");
 

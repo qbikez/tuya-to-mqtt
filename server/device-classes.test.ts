@@ -7,7 +7,7 @@ import {
 import Device from "../lib/tuya-driver/src/device";
 import { DiscoveryMessage } from "../lib/tuya-driver/src/find";
 import { DeviceWrapper, findByTopic } from "./devices";
-import { DeviceConfig } from "./devices/base";
+import { DeviceConfig } from "./devices/base-device";
 import { createDevice } from "./device-classes";
 
 vi.mock("../lib/tuya-driver/src/device");
