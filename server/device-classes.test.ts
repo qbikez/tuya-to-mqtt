@@ -1,9 +1,5 @@
 import { describe } from "node:test";
-import {
-  Cover,
-  CoverState,
-  CoverStateDp,
-} from "./devices/cover";
+import { Cover, CoverState, CoverStateDp } from "./devices/cover";
 import Device from "../lib/tuya-driver/src/device";
 import { DiscoveryMessage } from "../lib/tuya-driver/src/find";
 import { DeviceWrapper, findByTopic } from "./devices";
@@ -48,22 +44,24 @@ describe("cover", () => {
 
   it("discoveryPayload", () => {
     const expected = {
-      name: "roleta_jeremi",
-      state_topic: "tuya/roleta_jeremi/state",
-      command_topic: "tuya/roleta_jeremi/command",
-      availability_topic: "tuya/roleta_jeremi/status",
-      payload_available: "online",
-      payload_not_available: "offline",
-      unique_id: "roleta_jeremi",
-      device: {
-        ids: ["bf9346c6635dfb4b38sj2p"],
-        name: "roleta Jeremi",
-        mf: "Tuya",
-        mdl: "Cover",
+      cover: {
+        name: "roleta_jeremi",
+        state_topic: "tuya/roleta_jeremi/state",
+        command_topic: "tuya/roleta_jeremi/command",
+        availability_topic: "tuya/roleta_jeremi/status",
+        payload_available: "online",
+        payload_not_available: "offline",
+        unique_id: "roleta_jeremi",
+        device: {
+          ids: ["bf9346c6635dfb4b38sj2p"],
+          name: "roleta Jeremi",
+          mf: "Tuya",
+          mdl: "Cover",
+        },
+        position_topic: "tuya/roleta_jeremi/position",
+        set_position_topic: "tuya/roleta_jeremi/set_position",
+        optimistic: true,
       },
-      position_topic: "tuya/roleta_jeremi/position",
-      set_position_topic: "tuya/roleta_jeremi/set_position",
-      optimistic: true,
     };
 
     const message = cover.discoveryMessage("tuya");
@@ -91,7 +89,7 @@ describe("cover", () => {
 
   describe("stateChange", () => {
     const changes = [
-      { sequence: ["", "open"], state: "opening", position: 0 },
+      { sequence: ["close", "open"], state: "opening", position: 0 },
       { sequence: ["open", "stop"], state: "open", position: 0 },
       { sequence: ["open", "close"], state: "closing", position: 100 },
       { sequence: ["close", "stop"], state: "closed", position: 100 },

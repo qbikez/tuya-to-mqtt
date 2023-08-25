@@ -3,6 +3,7 @@ import { DiscoveryMessage } from "../lib/tuya-driver/src/find";
 
 import { DeviceBase, DeviceConfig, DeviceType } from "./devices/base-device";
 import { Cover } from "./devices/cover";
+import { Switch } from "./devices/switch";
 
 export function createDevice(
   msg: DiscoveryMessage,
@@ -36,59 +37,6 @@ export function getModel(productKey: string): DeviceType {
       models.includes(productKey)
     )?.[0] as DeviceType) ?? "generic"
   );
-}
-
-export type SwitchState = "ON" | "OFF";
-export class Switch extends DeviceBase {
-  public override type: DeviceType = "switch";
-  public state: SwitchState;
-
-  constructor(options: DeviceConfig, client: TuyaDevice) {
-    super(options, client);
-  }
-
-  public setState(state: SwitchState) {
-    const boolState = state === "ON";
-    this.setClientState({ "1": boolState });
-  }
-
-  override onStateChange(dps: DataPointSet) {
-    const baseState = dps["1"] as boolean;
-
-    this.state = baseState === true ? "ON" : "OFF";
-  }
-
-  override discoveryMessage(baseTopic: string) {
-    const baseData = super.discoveryMessage(baseTopic);
-    return {
-      device: {
-        ...baseData.device,
-        mdl: "Switch/Socket"
-      },
-      ...baseData,
-    }
-  }
-
-  public override stateMessage(baseTopic: string) {
-    const baseData = super.stateMessage(baseTopic);
-    const deviceTopic = `${baseTopic}/${this.name}`;
-    return {
-      ...baseData,
-      [`${deviceTopic}/state`]: this.state,
-    };
-  }
-
-  override command(command: string, arg1: string) {
-    switch (command) {
-      case "command": // open, close, stop
-        const state = arg1.toLowerCase();
-        const targetState = (state == "on" || state == "open" || state == "true") ? "ON" : "OFF";
-        this.setState(targetState);
-        return;
-      default:
-        throw new Error(`Unknown command ${command} for device ${this.type}`);
-    }
-  }
 }
 
 export class Plug extends DeviceBase {

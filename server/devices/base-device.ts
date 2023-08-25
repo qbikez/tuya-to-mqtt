@@ -14,6 +14,24 @@ export type DeviceConfig = DeviceOptions & {
   idSuffix?: string;
 };
 
+type DeviceDiscovery = {
+  ids: string[];
+  name: string;
+  mf: string;
+  mdl?: string;
+};
+
+type EntityDiscovery = {
+  name: string;
+  state_topic: string;
+  command_topic: string;
+  availability_topic: string;
+  payload_available: string;
+  payload_not_available: string;
+  unique_id: string;
+  device: DeviceDiscovery;
+};
+
 export class DeviceBase {
   public type: DeviceType = "generic";
   public displayName: string;
@@ -31,15 +49,11 @@ export class DeviceBase {
 
   protected onStateChange(state: DataPointSet) {}
 
-  public discoveryTopic(discoveryPrefix: string) {
-    return `${discoveryPrefix}/${this.type}/${this.name}/config`;
-  }
-
   public deviceTopic(baseTopic: string) {
     return `${baseTopic}/${this.name}`;
   }
 
-  public discoveryMessage(baseTopic: string) {
+  public discoveryMessage(baseTopic: string): Record<string, EntityDiscovery> {
     const deviceTopic = this.deviceTopic(baseTopic);
     const deviceData = {
       ids: [this.options.id + (this.options.idSuffix ?? "")],
@@ -57,7 +71,7 @@ export class DeviceBase {
       device: deviceData,
     };
 
-    return discoveryData;
+    return { [this.type]: discoveryData };
   }
 
   public stateMessage(

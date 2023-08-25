@@ -37,10 +37,12 @@ mqttClient.on("connect", async () => {
   mqttlog(`subscribed to ${topic}`, grants);
 });
 mqttClient.on("reconnect", () => {
-    mqttlog(`MQTT reconnect (connected=${mqttClient.connected} reconnecting=${mqttClient.reconnecting})`);
+  mqttlog(
+    `MQTT reconnect (connected=${mqttClient.connected} reconnecting=${mqttClient.reconnecting})`
+  );
 });
 mqttClient.on("disconnect", () => {
-    mqttlog(`MQTT disconnect`);
+  mqttlog(`MQTT disconnect`);
 });
 mqttClient.on("offline", () => {
   mqttlog(`MQTT offline`);
@@ -49,7 +51,6 @@ mqttClient.on("close", () => {
   mqttlog(`MQTT close`);
 });
 
-
 log("starting device dicsovery");
 
 const devices = initDevices("config/devices.json");
@@ -57,10 +58,14 @@ listenToBroadcast(devices, async (deviceWrapper) => {
   const { device } = deviceWrapper;
   if (!device) return;
 
-  const message = device.discoveryMessage(config.mqtt.deviceTopic);
-  const discoveryTopic = device.discoveryTopic(config.mqtt.discoveryTopic);
+  const discoveryMessages = device.discoveryMessage(config.mqtt.deviceTopic);
 
-  await mqttClient.publishAsync(discoveryTopic, JSON.stringify(message));
+  for (const [topic, payload] of Object.entries(discoveryMessages)) {
+    mqttClient.publishAsync(
+      `${config.mqtt.discoveryTopic}/${topic}`,
+      JSON.stringify(payload)
+    );
+  }
 
   const stateMessage = device.stateMessage(config.mqtt.deviceTopic);
   for (const [topic, payload] of Object.entries(stateMessage)) {
@@ -72,7 +77,9 @@ listenToBroadcast(devices, async (deviceWrapper) => {
 });
 
 mqttClient.on("message", (topic, payload, packet) => {
-  const regex = new RegExp(`^${config.mqtt.deviceTopic}/(?<device_id>[^/]+)/(?<command>.+)`);
+  const regex = new RegExp(
+    `^${config.mqtt.deviceTopic}/(?<device_id>[^/]+)/(?<command>.+)`
+  );
   const matches = regex.exec(topic);
 
   if (!matches) {
@@ -84,7 +91,7 @@ mqttClient.on("message", (topic, payload, packet) => {
 
   const knownCommands = ["set", "command", "set_.*"];
 
-  if (!knownCommands.some(c => new RegExp(c).test(command))) {
+  if (!knownCommands.some((c) => new RegExp(c).test(command))) {
     return;
   }
 
@@ -102,7 +109,7 @@ mqttClient.on("message", (topic, payload, packet) => {
       mqttlog("Device not connected for topic", topic);
       return;
     }
-    
+
     device.command(command, payload.toString());
   } catch (err) {
     console.error(err);

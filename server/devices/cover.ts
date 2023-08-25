@@ -22,7 +22,8 @@ export class Cover extends DeviceBase {
   }
 
   public override discoveryMessage(baseTopic: string) {
-    const baseData = super.discoveryMessage(baseTopic);
+    const baseData = super.discoveryMessage(baseTopic)[this.type];
+    
     const deviceTopic = this.deviceTopic(baseTopic);
 
     const device = {
@@ -37,7 +38,9 @@ export class Cover extends DeviceBase {
       optimistic: true,
     };
 
-    return message;
+    return {
+      [this.type]: message,
+    };
   }
 
   public override stateMessage(baseTopic: string) {
@@ -59,7 +62,7 @@ export class Cover extends DeviceBase {
     this.state = Cover.toCoverState(baseState, this.lastMove);
     this.position = Cover.getPosition(this.state, this.lastMove);
   }
-  
+
   override command(command: string, arg1: string) {
     switch (command) {
       case "set_position":
@@ -74,7 +77,7 @@ export class Cover extends DeviceBase {
         throw new Error(`Unknown command ${command} for device ${this.type}`);
     }
   }
-  
+
   public setState(state: CoverState | CoverStateCommand) {
     const dp = Cover.fromCoverState(state);
     this.setClientState({ "1": dp });
@@ -139,7 +142,7 @@ export class Cover extends DeviceBase {
           ? "closed"
           : "unknown";
       default:
-        throw new Error(`Unknown target state ${state}`);
+        throw new Error(`Unknown target state '${state}'`);
     }
   }
 }
