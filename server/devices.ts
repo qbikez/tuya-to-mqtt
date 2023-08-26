@@ -35,8 +35,7 @@ export function listenToBroadcast(
     }
 
     device.config.ip = msg.ip;
-    device.config.idSuffix = "_2";
-
+    
     if (!device.client) {
       log(`discovered NEW device ${device.config.name} at ${device.config.ip}`);
 
