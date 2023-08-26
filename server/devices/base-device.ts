@@ -41,9 +41,20 @@ export class DeviceBase {
   constructor(protected options: DeviceConfig, protected client: TuyaDevice) {
     this.displayName = (options.name ?? options.id) + (options.idSuffix ?? "");
     this.name = this.sanitizeName(options.name) + (options.idSuffix ?? "");
-    client.on("state-change", (state) => this.onClientState(state));
-
     this.log = logfactory(`tuya:device:${this.name}`);
+
+    client.on("state-change", (state) => this.onClientState(state));
+    client.on("connected", () => {
+      this.log("connected");
+      this.refreshClientState();
+    });
+    client.on("disconnected", () => {
+      this.log("disconnected");
+    });
+    client.on("error", (err) => {
+      this.log("ERROR", err);
+    });
+
   }
 
   protected sanitizeName(name: string) {

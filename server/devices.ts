@@ -39,13 +39,19 @@ export function listenToBroadcast(
 
     if (!device.client) {
       log(`discovered NEW device ${device.config.name} at ${device.config.ip}`);
-  
-      device.client = new TuyaDevice(device.config);
+
+      device.client = new TuyaDevice({
+        heartbeatInterval: 5000,
+        ...device.config,
+      });
       device.device = createDevice(msg, device.config, device.client);
     }
     if (device.client && !device.client.connected) {
       log(`connecting device ${device.config.name} at ${device.config.ip}`);
-      device.client.connect({ enableHeartbeat: false });
+      device.client.connect({
+        enableHeartbeat: true, // heartbeat is needed to keep the connection alive
+        updateOnConnect: true,
+      });
     }
 
     void onUpdate(device);
