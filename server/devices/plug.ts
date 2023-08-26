@@ -17,6 +17,9 @@ export class Plug extends Switch {
     return {
       ...baseData,
       [`sensor/${this.name}/config`]: {
+        ...baseData[`${this.type}/${this.name}/config`],
+      },
+      [`sensor/${this.name}/config`]: {
         ...discoveryData,
         device,
       },
