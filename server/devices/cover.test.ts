@@ -74,8 +74,8 @@ describe("cover", () => {
         cover.position = 50;
         cover.lastMove = "up";
 
-        cover.onStateChange({ "1": sequence[0] });
-        cover.onStateChange({ "1": sequence[1] });
+        cover.onClientState({ "1": sequence[0] });
+        cover.onClientState({ "1": sequence[1] });
 
         expect(cover.state).toBe(state);
         expect(cover.position).toBe(position);

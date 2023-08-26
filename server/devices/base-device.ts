@@ -4,7 +4,6 @@ import TuyaDevice, {
 } from "../../lib/tuya-driver/src/device";
 
 import logfactory from "debug";
-import { DiscoveryMessage } from "../../lib/tuya-driver/src/find";
 const log = logfactory("tuya:device");
 
 export type DeviceType = "cover" | "switch" | "plug" | "generic";
@@ -37,33 +36,35 @@ export class DeviceBase {
   public type: DeviceType = "generic";
   public displayName: string;
   public name: string;
+  log: logfactory.Debugger;
 
   constructor(protected options: DeviceConfig, protected client: TuyaDevice) {
     this.displayName = (options.name ?? options.id) + (options.idSuffix ?? "");
     this.name = this.sanitizeName(options.name) + (options.idSuffix ?? "");
-    client.on("state-change", (state) => this.onStateChange(state));
+    client.on("state-change", (state) => this.onClientState(state));
+
+    this.log = logfactory(`tuya:device:${this.name}`);
   }
 
   protected sanitizeName(name: string) {
     return name.replace(/[^a-zA-Z0-9\-_]/g, "_").toLowerCase();
   }
 
-  protected onStateChange(state: DataPointSet) {}
-
   public deviceTopic(baseTopic: string) {
     return `${baseTopic}/${this.name}`;
   }
 
-  
   public discoveryMessage(baseTopic: string): Record<string, EntityDiscovery> {
     const deviceTopic = this.deviceTopic(baseTopic);
     const deviceData = this.deviceData();
     const discoveryData = this.discoveryData(deviceTopic);
 
-    return { [`${this.type}/${this.name}/config`]: {
-      ...discoveryData,
-      device: deviceData
-    } };
+    return {
+      [`${this.type}/${this.name}/config`]: {
+        ...discoveryData,
+        device: deviceData,
+      },
+    };
   }
 
   protected deviceData(): DeviceDiscovery {
@@ -74,7 +75,9 @@ export class DeviceBase {
     };
   }
 
-  protected discoveryData(deviceTopic: string): Omit<EntityDiscovery, 'device'> {
+  protected discoveryData(
+    deviceTopic: string
+  ): Omit<EntityDiscovery, "device"> {
     return {
       name: this.name,
       state_topic: `${deviceTopic}/state`,
@@ -102,7 +105,17 @@ export class DeviceBase {
   }
 
   protected setClientState(message: DataPointSet) {
-    log(`sending to ${this.name}`, message);
+    this.log(`sending to ${this.name}`, message);
     this.client.setState(message);
+    // make sure we recieve the updated state
+    this.refreshClientState();
+  }
+
+  protected onClientState(state: DataPointSet) {
+    this.log(`state change`, state);
+  }
+
+  protected refreshClientState() {
+    this.client.update();
   }
 }

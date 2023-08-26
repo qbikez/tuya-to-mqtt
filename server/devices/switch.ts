@@ -16,7 +16,9 @@ export class Switch extends DeviceBase {
     this.setClientState({ "1": boolState });
   }
 
-  override onStateChange(dps: DataPointSet) {
+  override onClientState(dps: DataPointSet) {
+    super.onClientState(dps);
+
     const baseState = dps["1"] as boolean;
 
     this.state = baseState === true ? "ON" : "OFF";

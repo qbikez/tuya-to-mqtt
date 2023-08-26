@@ -1,5 +1,5 @@
 import { DeviceBase, DeviceType, DeviceConfig } from "./base-device";
-import TuyaDevice from "../../lib/tuya-driver/src/device";
+import TuyaDevice, { DataPointSet } from "../../lib/tuya-driver/src/device";
 import { Switch } from "./switch";
 
 export class Plug extends Switch {
@@ -21,5 +21,9 @@ export class Plug extends Switch {
         device,
       },
     };
+  }
+
+  override onClientState(dps: DataPointSet): void {
+    super.onClientState(dps);
   }
 }

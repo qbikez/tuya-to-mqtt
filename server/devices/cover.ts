@@ -53,7 +53,9 @@ export class Cover extends DeviceBase {
     };
   }
 
-  override onStateChange(dps: DataPointSet) {
+  override onClientState(dps: DataPointSet) {
+    super.onClientState(dps);
+
     const baseState = dps["1"] as CoverStateDp;
     const isMoving = baseState == "open" || baseState == "close";
     if (isMoving) {

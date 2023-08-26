@@ -1,23 +1,22 @@
 import Device from "../../lib/tuya-driver/src/device";
 import { DeviceWrapper, findByTopic } from "../devices";
 import { DeviceConfig } from "./base-device";
-import { Cover, CoverState, CoverStateDp } from "./cover";
-import { Switch, SwitchState } from "./switch";
+import { Switch as Plug, SwitchState } from "./switch";
 
 vi.mock("../../lib/tuya-driver/src/device");
 
-describe("switch", () => {
+describe("plug", () => {
   const cfg: DeviceConfig = {
     id: "someMagicId",
-    name: "mySwitch+",
+    name: "myPlug+",
     ip: "",
     key: "",
   };
   const deviceClient = new Device(cfg);
-  const sw = new Switch(cfg, deviceClient);
-  const sanitizedName = sw.name;
+  const plug = new Plug(cfg, deviceClient);
+  const sanitizedName = plug.name;
 
-  it("discoveryPayload", () => {
+  it("discoveryPayload for switch", () => {
     const expected = {
       [`switch/${sanitizedName}/config`]: {
         name: `${sanitizedName}`,
@@ -35,7 +34,7 @@ describe("switch", () => {
       },
     };
 
-    const message = sw.discoveryMessage("tuya");
+    const message = plug.discoveryMessage("tuya");
     expect(message).toEqual(expected);
   });
 
@@ -43,13 +42,13 @@ describe("switch", () => {
     const devices: DeviceWrapper[] = [
       {
         config: cfg,
-        device: sw,
+        device: plug,
       },
     ];
     const cases = [
-      { topic: `tuya/${sanitizedName}/state`, expected: sw },
-      { topic: `tuya/${sanitizedName}/set_position`, expected: sw },
-      { topic: `tuya/${sanitizedName}`, expected: sw },
+      { topic: `tuya/${sanitizedName}/state`, expected: plug },
+      { topic: `tuya/${sanitizedName}/set_position`, expected: plug },
+      { topic: `tuya/${sanitizedName}`, expected: plug },
     ];
     it.each(cases)("$topic", ({ topic, expected }) => {
       const found = findByTopic(devices, "tuya", topic);
@@ -66,10 +65,10 @@ describe("switch", () => {
     it.each(changes)(
       "state change: $sequence => $state",
       ({ sequence, state }) => {
-        sw.onClientState({ "1": sequence[0] });
-        sw.onClientState({ "1": sequence[1] });
+        plug.onClientState({ "1": sequence[0] });
+        plug.onClientState({ "1": sequence[1] });
 
-        expect(sw.state).toBe(state);
+        expect(plug.state).toBe(state);
       }
     );
   });
@@ -81,7 +80,7 @@ describe("switch", () => {
     ];
 
     it.each(changes)("setState $state => $dp", ({ state, dp }) => {
-      sw.setState(state as SwitchState);
+      plug.setState(state as SwitchState);
 
       expect(deviceClient.setState).toBeCalledWith({ "1": dp });
     });
@@ -89,10 +88,10 @@ describe("switch", () => {
 
   describe("commands", () => {
     it("set_state", () => {
-      sw.setState = vi.fn();
-      sw.command("command", "OFF");
+      plug.setState = vi.fn();
+      plug.command("command", "OFF");
 
-      expect(sw.setState).toBeCalledWith("OFF");
+      expect(plug.setState).toBeCalledWith("OFF");
     });
   });
 });
