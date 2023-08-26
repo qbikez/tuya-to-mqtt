@@ -108,6 +108,8 @@ export class DeviceBase {
       [`${deviceTopic}/state`]: {},
       [`${deviceTopic}/status`]: this.client.connected ? "online" : "offline",
       [`${deviceTopic}/dps`]: this.client.getState(),
+      [`${deviceTopic}/ip`]: this.client.ip,
+      [`${deviceTopic}/id`]: this.client.id,
     };
   }
 
