@@ -1,23 +1,23 @@
 import { DeviceBase, DeviceType, DeviceConfig } from "./base-device";
 import TuyaDevice from "../../lib/tuya-driver/src/device";
+import { Switch } from "./switch";
 
-export class Plug extends DeviceBase {
+export class Plug extends Switch {
   public override type: DeviceType = "plug";
   constructor(options: DeviceConfig, client: TuyaDevice) {
     super(options, client);
   }
 
   override discoveryMessage(baseTopic: string) {
-    const baseData = this.discoveryData(baseTopic);
+    const discoveryData = this.discoveryData(baseTopic);
     const device = this.deviceData();
-    
+
+    const baseData = super.discoveryMessage(baseTopic);
+
     return {
-      [`switch/${this.name}/config`]: {
-        ...baseData,
-        device,
-      },
+      ...baseData,
       [`sensor/${this.name}/config`]: {
-        ...baseData,
+        ...discoveryData,
         device,
       },
     };
