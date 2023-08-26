@@ -8,7 +8,7 @@
     "start:silent": "vite",
     "start:debug": "vite",
     "start:server": "cross-env NODE_OPTIONS=\"-r dotenv/config --loader ts-node/esm --experimental-loader=extensionless --no-warnings\" node ./server/server.ts",
-    "start:dist": "node --experimental-loader=extensionless ./dist/server/server.js",
+    "start:dist": "cross-env DEBUG=\"tuya:*,tuya:discovery,-@tuyapi/driver\" node --experimental-loader=extensionless ./dist/server/server.js",
     "build": "tsc",
     "build:clean": "rimraf dist && npm run build",
     "preview": "vite preview",
