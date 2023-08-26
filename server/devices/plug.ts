@@ -1,6 +1,7 @@
 import { DeviceBase, DeviceType, DeviceConfig } from "./base-device";
 import TuyaDevice, { DataPointSet } from "../../lib/tuya-driver/src/device";
 import { Switch } from "./switch";
+import { deviceData, discoveryData } from "../homeassistant";
 
 export class Plug extends Switch {
   public override type: DeviceType = "plug";
@@ -9,8 +10,8 @@ export class Plug extends Switch {
   }
 
   override discoveryMessage(baseTopic: string) {
-    const discoveryData = this.discoveryData(baseTopic);
-    const device = this.deviceData();
+    const discovery = discoveryData(baseTopic, this.name);
+    const device = deviceData(this.options.id + (this.options.idSuffix ?? ""), this.displayName);
 
     const baseData = super.discoveryMessage(baseTopic);
 
@@ -20,7 +21,7 @@ export class Plug extends Switch {
         ...baseData[`${this.type}/${this.name}/config`],
       },
       [`sensor/${this.name}/config`]: {
-        ...discoveryData,
+        ...discovery,
         device,
       },
     };

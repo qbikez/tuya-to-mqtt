@@ -4,6 +4,7 @@ import TuyaDevice, {
 } from "../../lib/tuya-driver/src/device";
 
 import logfactory from "debug";
+import { EntityDiscovery, deviceData, discoveryData } from "../homeassistant";
 const log = logfactory("tuya:device");
 
 export type DeviceType = "cover" | "switch" | "plug" | "generic";
@@ -14,23 +15,6 @@ export type DeviceConfig = DeviceOptions & {
   idSuffix?: string;
 };
 
-type DeviceDiscovery = {
-  ids: string[];
-  name: string;
-  mf: string;
-  mdl?: string;
-};
-
-type EntityDiscovery = {
-  name: string;
-  state_topic: string;
-  command_topic: string;
-  availability_topic: string;
-  payload_available: string;
-  payload_not_available: string;
-  unique_id: string;
-  device: DeviceDiscovery;
-};
 
 export class DeviceBase {
   public type: DeviceType = "generic";
@@ -67,36 +51,14 @@ export class DeviceBase {
 
   public discoveryMessage(baseTopic: string): Record<string, EntityDiscovery> {
     const deviceTopic = this.deviceTopic(baseTopic);
-    const deviceData = this.deviceData();
-    const discoveryData = this.discoveryData(deviceTopic);
+    const devData = deviceData(this.options.id + (this.options.idSuffix ?? ""), this.displayName);
+    const discovery = discoveryData(deviceTopic, this.name);
 
     return {
       [`${this.type}/${this.name}/config`]: {
-        ...discoveryData,
-        device: deviceData,
+        ...discovery,
+        device: devData,
       },
-    };
-  }
-
-  protected deviceData(): DeviceDiscovery {
-    return {
-      ids: [this.options.id + (this.options.idSuffix ?? "")],
-      name: this.displayName,
-      mf: "Tuya",
-    };
-  }
-
-  protected discoveryData(
-    deviceTopic: string
-  ): Omit<EntityDiscovery, "device"> {
-    return {
-      name: this.name,
-      state_topic: `${deviceTopic}/state`,
-      command_topic: `${deviceTopic}/command`,
-      availability_topic: `${deviceTopic}/status`,
-      payload_available: "online",
-      payload_not_available: "offline",
-      unique_id: this.name,
     };
   }
 
