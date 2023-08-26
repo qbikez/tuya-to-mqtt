@@ -108,13 +108,14 @@ export class Cover extends DeviceBase {
       case "open":
       case "opening":
         return "open";
+      case "close":
       case "closed":
       case "closing":
         return "close";
       case "stop":
         return "stop";
       default:
-        throw new Error(`Unknown DP state ${state}`);
+        throw new Error(`Unknown cover state ${state}`);
     }
   }
 
