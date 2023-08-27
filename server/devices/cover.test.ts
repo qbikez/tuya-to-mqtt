@@ -41,6 +41,22 @@ describe("cover", () => {
     expect(message).toEqual(expected);
   });
 
+  it("state message", () => {
+    const dps = { "1": "open" };
+    deviceClient.getState = vitest.fn().mockReturnValue(dps);
+
+    cover.onClientState(dps);
+    const stateMessage = cover.stateMessage();
+    expect(stateMessage).toEqual({
+      dps: { "1": "open" },
+      id: undefined,
+      ip: undefined,
+      position: 0,
+      state: "opening",
+      status: "offline",
+    });
+  });
+
   describe("find by topic", () => {
     const devices: DeviceWrapper[] = [
       {

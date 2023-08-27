@@ -4,7 +4,7 @@ import TuyaDevice, {
 } from "../../lib/tuya-driver/src/device";
 
 import logfactory from "debug";
-import { EntityDiscovery, deviceData, discoveryData } from "../homeassistant";
+import { EntityDiscovery, StateMessage, deviceData, discoveryData } from "../homeassistant";
 const log = logfactory("tuya:device");
 
 export type DeviceType = "cover" | "switch" | "plug" | "generic";
@@ -16,11 +16,22 @@ export type DeviceConfig = DeviceOptions & {
 };
 
 
+export type Sensor = {
+  dpId: string;
+  identifier: string;
+  values: Array<object | number | boolean | string>;
+  pitch?: number;
+  scale?: number;
+  unit?: string;
+};
+
+
 export class DeviceBase {
   public type: DeviceType = "generic";
   public displayName: string;
   public name: string;
   log: logfactory.Debugger;
+  dps: DataPointSet = {};
 
   constructor(protected options: DeviceConfig, protected client: TuyaDevice) {
     this.displayName = (options.name ?? options.id) + (options.idSuffix ?? "");
@@ -38,21 +49,19 @@ export class DeviceBase {
     client.on("error", (err) => {
       this.log("ERROR", err);
     });
-
   }
 
   protected sanitizeName(name: string) {
     return name.replace(/[^a-zA-Z0-9\-_]/g, "_").toLowerCase();
   }
 
-  public deviceTopic(baseTopic: string) {
-    return `${baseTopic}/${this.name}`;
-  }
-
   public discoveryMessage(baseTopic: string): Record<string, EntityDiscovery> {
-    const deviceTopic = this.deviceTopic(baseTopic);
-    const devData = deviceData(this.options.id + (this.options.idSuffix ?? ""), this.displayName);
-    const discovery = discoveryData(deviceTopic, this.name);
+    const topic = deviceTopic(this, baseTopic);
+    const devData = deviceData(
+      this.options.id + (this.options.idSuffix ?? ""),
+      this.displayName
+    );
+    const discovery = discoveryData(topic, this.name);
 
     return {
       [`${this.type}/${this.name}/config`]: {
@@ -62,16 +71,13 @@ export class DeviceBase {
     };
   }
 
-  public stateMessage(
-    baseTopic: string
-  ): Record<string, object | string | number | boolean> {
-    const deviceTopic = this.deviceTopic(baseTopic);
+  public stateMessage(): StateMessage {
     return {
-      [`${deviceTopic}/state`]: {},
-      [`${deviceTopic}/status`]: this.client.connected ? "online" : "offline",
-      [`${deviceTopic}/dps`]: this.client.getState(),
-      [`${deviceTopic}/ip`]: this.client.ip,
-      [`${deviceTopic}/id`]: this.client.id,
+      [`state`]: {},
+      [`status`]: this.client.connected ? "online" : "offline",
+      [`dps`]: this.dps,
+      [`ip`]: this.client.ip,
+      [`id`]: this.client.id,
     };
   }
 
@@ -86,11 +92,29 @@ export class DeviceBase {
     this.refreshClientState();
   }
 
-  protected onClientState(state: DataPointSet) {
+  public onClientState(state: DataPointSet) {
     this.log(`state change`, state);
+    this.dps = this.client.getState();
   }
 
   protected refreshClientState() {
     this.client.update();
   }
+}
+
+export function mapDps(dps: DataPointSet, sensors: Record<string, Sensor>, includeUnknown = false): StateMessage {
+  const result: StateMessage = {};
+  for (const [dp, value] of Object.entries(dps)) {
+    const sensor = sensors[dp];
+    if (sensor) {
+      result[sensor.identifier] = value;
+    } else if(includeUnknown) {
+      result[dp] = value;
+    }
+  }
+  return result;
+}
+
+export function deviceTopic(device: DeviceBase, baseTopic: string) {
+  return `${baseTopic}/${device.name}`;
 }

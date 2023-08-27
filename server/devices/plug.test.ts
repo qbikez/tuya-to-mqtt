@@ -37,6 +37,22 @@ describe("plug", () => {
     const message = plug.discoveryMessage("tuya");
     expect(message).toEqual(expected);
   });
+  
+  it("state message", () => {
+    const dps = { "1": true };
+    deviceClient.getState = vitest.fn().mockReturnValue(dps);
+
+    plug.onClientState(dps);
+    const stateMessage = plug.stateMessage();
+    
+    expect(stateMessage).toEqual({
+      dps,
+      id: undefined,
+      ip: undefined,
+      state: "ON",
+      status: "offline",
+    });
+  });
 
   describe("find by topic", () => {
     const devices: DeviceWrapper[] = [

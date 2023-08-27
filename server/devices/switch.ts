@@ -1,5 +1,6 @@
 import { DeviceBase, DeviceConfig, DeviceType } from "./base-device";
 import TuyaDevice, { DataPointSet } from "../../lib/tuya-driver/src/device";
+import { StateMessage } from "../homeassistant";
 
 export type SwitchState = "ON" | "OFF";
 
@@ -37,12 +38,11 @@ export class Switch extends DeviceBase {
     };
   }
 
-  public override stateMessage(baseTopic: string) {
-    const baseData = super.stateMessage(baseTopic);
-    const deviceTopic = `${baseTopic}/${this.name}`;
+  public override stateMessage(): StateMessage {
+    const baseData = super.stateMessage();
     return {
       ...baseData,
-      [`${deviceTopic}/state`]: this.state,
+      [`state`]: this.state,
     };
   }
 

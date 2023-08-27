@@ -3,6 +3,7 @@ import { findByTopic, initDevices, listenToBroadcast } from "./devices";
 import * as mqtt from "mqtt";
 
 import logfactory from "debug";
+import { deviceTopic } from "./devices/base-device";
 const log = logfactory("tuya:server");
 const mqttlog = logfactory("tuya:mqtt");
 
@@ -67,8 +68,9 @@ listenToBroadcast(devices, async (deviceWrapper) => {
     );
   }
 
-  const stateMessage = device.stateMessage(config.mqtt.deviceTopic);
-  for (const [topic, payload] of Object.entries(stateMessage)) {
+  const stateMessage = device.stateMessage();
+  for (const [subTopic, payload] of Object.entries(stateMessage)) {
+    const topic = deviceTopic(device, config.mqtt.deviceTopic) + "/" + subTopic;
     await mqttClient.publishAsync(
       topic,
       payload instanceof Object ? JSON.stringify(payload) : `${payload}`

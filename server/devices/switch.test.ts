@@ -39,6 +39,22 @@ describe("switch", () => {
     expect(message).toEqual(expected);
   });
 
+  it("state message", () => {
+    const dps = { "1": true };
+    deviceClient.getState = vitest.fn().mockReturnValue(dps);
+
+    sw.onClientState(dps);
+    const stateMessage = sw.stateMessage();
+    
+    expect(stateMessage).toEqual({
+      dps,
+      id: undefined,
+      ip: undefined,
+      state: "ON",
+      status: "offline",
+    });
+  });
+
   describe("find by topic", () => {
     const devices: DeviceWrapper[] = [
       {

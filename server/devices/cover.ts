@@ -1,4 +1,4 @@
-import { DeviceBase, DeviceConfig, DeviceType } from "./base-device";
+import { DeviceBase, DeviceConfig, DeviceType, deviceTopic } from "./base-device";
 import TuyaDevice, { DataPointSet } from "../../lib/tuya-driver/src/device";
 
 export type CoverState = "open" | "opening" | "closed" | "closing" | "unknown";
@@ -24,7 +24,7 @@ export class Cover extends DeviceBase {
   public override discoveryMessage(baseTopic: string) {
     const baseData = super.discoveryMessage(baseTopic)[`${this.type}/${this.name}/config`];
     
-    const deviceTopic = this.deviceTopic(baseTopic);
+    const topic = deviceTopic(this, baseTopic);
 
     const device = {
       ...baseData.device,
@@ -33,8 +33,8 @@ export class Cover extends DeviceBase {
     const message = {
       ...baseData,
       device,
-      position_topic: `${deviceTopic}/position`,
-      set_position_topic: `${deviceTopic}/set_position`,
+      position_topic: `${topic}/position`,
+      set_position_topic: `${topic}/set_position`,
       optimistic: true,
     };
 
@@ -43,13 +43,12 @@ export class Cover extends DeviceBase {
     };
   }
 
-  public override stateMessage(baseTopic: string) {
-    const baseData = super.stateMessage(baseTopic);
-    const deviceTopic = `${baseTopic}/${this.name}`;
+  public override stateMessage() {
+    const baseData = super.stateMessage();
     return {
       ...baseData,
-      [`${deviceTopic}/state`]: this.state,
-      [`${deviceTopic}/position`]: this.position,
+      [`state`]: this.state,
+      [`position`]: this.position,
     };
   }
 

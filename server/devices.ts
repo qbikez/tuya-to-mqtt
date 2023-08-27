@@ -4,7 +4,7 @@ import { Find } from "../lib/tuya-driver/src/find";
 
 import logfactory from "debug";
 import { createDevice } from "./device-classes";
-import { DeviceBase, DeviceConfig } from "./devices/base-device";
+import { DeviceBase, DeviceConfig, deviceTopic } from "./devices/base-device";
 const log = logfactory("tuya:discovery");
 
 export type DeviceWrapper = {
@@ -64,6 +64,6 @@ export function findByTopic(
   topic: string
 ): DeviceWrapper | undefined {
   return devices.find(
-    (d) => !!d.device && topic.startsWith(d.device.deviceTopic(baseTopic))
+    (d) => !!d.device && topic.startsWith(deviceTopic(d.device, baseTopic))
   );
 }

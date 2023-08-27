@@ -16,6 +16,10 @@ export type EntityDiscovery = {
   device: DeviceDiscovery;
 };
 
+export type StateMessage = {
+  [topic: string]: string | number | boolean | Record<string, unknown>;
+};
+
 export function deviceData(id: string, displayName: string): DeviceDiscovery {
   return {
     ids: [id],
