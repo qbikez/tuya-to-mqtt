@@ -1,4 +1,11 @@
-import { DeviceBase, DeviceType, DeviceConfig, mapDps, Sensor } from "./base-device";
+import {
+  DeviceBase,
+  DeviceType,
+  DeviceConfig,
+  mapDps,
+  Sensor,
+  deviceTopic,
+} from "./base-device";
 import TuyaDevice, { DataPointSet } from "../../lib/tuya-driver/src/device";
 import { Switch } from "./switch";
 import { StateMessage, deviceData, discoveryData } from "../homeassistant";
@@ -23,7 +30,7 @@ export class Plug extends Switch {
       unit: "seconds",
     },
     "17": {
-      dpId : "17",
+      dpId: "17",
       // incremental power consumption
       identifier: "add_ele",
       values: [0, 50000],
@@ -93,23 +100,23 @@ export class Plug extends Switch {
     "26": {
       dpId: "26",
       identifier: "fault",
-      values: ['ov_vol', 'ov_pwr', 'ls_cr', 'ls_vol', 'ls_pow']
+      values: ["ov_vol", "ov_pwr", "ls_cr", "ls_vol", "ls_pow"],
     },
     "38": {
       dpId: "38",
       identifier: "relay_status",
-      values: ['off', 'on', 'memory'],
+      values: ["off", "on", "memory"],
     },
     "41": {
       dpId: "41",
       identifier: "cycle_time",
-      values: []
+      values: [],
     },
     "42": {
       dpId: "42",
       identifier: "random_time",
-      values: []
-    }
+      values: [],
+    },
   };
   constructor(options: DeviceConfig, client: TuyaDevice) {
     super(options, client);
@@ -123,16 +130,27 @@ export class Plug extends Switch {
     );
 
     const baseData = super.discoveryMessage(baseTopic);
+    const sensorDiscovery = {};
+    Object.entries(this.sensors).forEach(([key, sensor]) => {
+      const sensorTopic = `sensor/${this.name}_${key}/config`;
+      const mainTopic = deviceTopic(this, baseTopic);
+
+      const sensorMessage = {
+        device,
+        ...discovery,
+        name: `${this.displayName} ${sensor.identifier}`,
+        unit_of_measurement: sensor.unit,
+        //value_template: `{{ value_json.${sensor.identifier} }}`,
+      };
+      sensorDiscovery[sensorTopic] = sensorMessage;
+    });
 
     return {
       ...baseData,
       [`switch/${this.name}/config`]: {
         ...baseData[`${this.type}/${this.name}/config`],
       },
-      [`sensor/${this.name}/config`]: {
-        ...discovery,
-        device,
-      },
+      ...sensorDiscovery,
     };
   }
 
@@ -142,11 +160,10 @@ export class Plug extends Switch {
     return {
       ...baseData,
       ...mapped,
-    }
+    };
   }
 
   override onClientState(dps: DataPointSet): void {
-    super.onClientState(dps);    
+    super.onClientState(dps);
   }
 }
-
