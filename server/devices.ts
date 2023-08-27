@@ -64,6 +64,6 @@ export function findByTopic(
   topic: string
 ): DeviceWrapper | undefined {
   return devices.find(
-    (d) => !!d.device && topic.startsWith(deviceTopic(d.device, baseTopic))
+    (d) => !!d.device && `${topic}/`.startsWith(`${deviceTopic(d.device, baseTopic)}/`)
   );
 }
