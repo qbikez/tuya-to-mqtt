@@ -51,7 +51,7 @@ describe("cover", () => {
       dps: { "1": "open" },
       id: undefined,
       ip: undefined,
-      position: 0,
+      position: 100,
       state: "opening",
       status: "offline",
     });
@@ -78,10 +78,10 @@ describe("cover", () => {
 
   describe("stateChange", () => {
     const changes = [
-      { sequence: ["close", "open"], state: "opening", position: 0 },
-      { sequence: ["open", "stop"], state: "open", position: 0 },
-      { sequence: ["open", "close"], state: "closing", position: 100 },
-      { sequence: ["close", "stop"], state: "closed", position: 100 },
+      { sequence: ["close", "open"], state: "opening", position: 100 },
+      { sequence: ["open", "stop"], state: "open", position: 100 },
+      { sequence: ["open", "close"], state: "closing", position: 0 },
+      { sequence: ["close", "stop"], state: "closed", position: 0  },
     ];
     it.each(changes)(
       "state change: $sequence => $state",
@@ -114,9 +114,9 @@ describe("cover", () => {
 
   describe("setPosition", () => {
     const changes: Array<{ from: number; to: number; dp: CoverStateDp }> = [
-      { from: 0, to: 100, dp: "close" },
+      { from: 0, to: 100, dp: "open" },
       { from: 100, to: 100, dp: "stop" },
-      { from: 100, to: 0, dp: "open" },
+      { from: 100, to: 0, dp: "close" },
     ];
 
     it.each(changes)("setPosition $from => $to: $dp", ({ from, to, dp }) => {
@@ -128,7 +128,7 @@ describe("cover", () => {
   });
 
   describe("commands", () => {
-    it("set_position", () => {
+    it("set_positions", () => {
       cover.setPosition = vi.fn();
       cover.command("set_position", "100");
 

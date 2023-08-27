@@ -7,8 +7,8 @@ export type CoverStateDp = "close" | "open" | "stop";
 type Direction = "up" | "down";
 
 export class Cover extends DeviceBase {
-  private static readonly positionClosed = 100;
-  private static readonly positionOpen = 0;
+  private static readonly positionClosed = 0;
+  private static readonly positionOpen = 100;
   private static readonly positionUnknown = 50;
 
   public override type: DeviceType = "cover";
