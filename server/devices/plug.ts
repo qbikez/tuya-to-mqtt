@@ -4,7 +4,7 @@ import {
   DeviceConfig,
   mapDps,
   Sensor,
-  deviceTopic,
+  deviceTopic as getDeviceTopic,
 } from "./base-device";
 import TuyaDevice, { DataPointSet } from "../../lib/tuya-driver/src/device";
 import { Switch } from "./switch";
@@ -123,7 +123,8 @@ export class Plug extends Switch {
   }
 
   override discoveryMessage(baseTopic: string) {
-    const discovery = discoveryData(baseTopic, this.name);
+    var deviceTopic = getDeviceTopic(this, baseTopic);
+    const discovery = discoveryData(deviceTopic, this.name);
     const device = deviceData(
       this.options.id + (this.options.idSuffix ?? ""),
       this.displayName
@@ -132,14 +133,16 @@ export class Plug extends Switch {
     const baseData = super.discoveryMessage(baseTopic);
     const sensorDiscovery = {};
     Object.entries(this.sensors).forEach(([key, sensor]) => {
-      const sensorTopic = `sensor/${this.name}_${key}/config`;
-      const mainTopic = deviceTopic(this, baseTopic);
+      const sensorTopic = `sensor/${this.name}/${sensor.identifier}/config`;
+      const deviceTopic = getDeviceTopic(this, baseTopic);
 
       const sensorMessage = {
         device,
         ...discovery,
+        unique_id: `${this.name}_${sensor.identifier}`,
         name: `${this.displayName} ${sensor.identifier}`,
         unit_of_measurement: sensor.unit,
+        state_topic: `${deviceTopic}/${sensor.identifier}`,
         //value_template: `{{ value_json.${sensor.identifier} }}`,
       };
       sensorDiscovery[sensorTopic] = sensorMessage;
