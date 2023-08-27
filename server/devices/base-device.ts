@@ -107,7 +107,9 @@ export function mapDps(dps: DataPointSet, sensors: Record<string, Sensor>, inclu
   for (const [dp, value] of Object.entries(dps)) {
     const sensor = sensors[dp];
     if (sensor) {
-      result[sensor.identifier] = value;
+      const numberValue = value as number;
+      const scaledValue = sensor.scale ? numberValue / Math.pow(10, sensor.scale) : value;
+      result[sensor.identifier] = scaledValue;
     } else if(includeUnknown) {
       result[dp] = value;
     }
