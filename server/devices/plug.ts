@@ -163,6 +163,7 @@ export class Plug extends Switch {
     return {
       ...baseData,
       ...mapped,
+      sensors: this.sensors,
     };
   }
 
