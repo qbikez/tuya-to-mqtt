@@ -199,7 +199,8 @@ export function mapDps(
   for (const [dp, value] of Object.entries(dps)) {
     const sensor = sensors[dp];
     if (sensor) {
-      switch (sensor.type) {
+      const sensorType = sensor.type ?? "sensor";
+      switch (sensorType) {
         case "number":
         case "sensor":
           const numberValue = value as number;
