@@ -54,6 +54,7 @@ describe("cover", () => {
       position: 100,
       state: "opening",
       status: "offline",
+      sensors: {}
     });
   });
 

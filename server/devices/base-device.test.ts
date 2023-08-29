@@ -24,6 +24,7 @@ describe("base device", () => {
       id: undefined,
       ip: undefined,
       state: {},
+      sensors: {},
       status: "offline",
     });
   });

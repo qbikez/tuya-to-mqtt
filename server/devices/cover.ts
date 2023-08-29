@@ -1,4 +1,4 @@
-import { DeviceBase, DeviceConfig, DeviceType, deviceTopic } from "./base-device";
+import { DeviceBase, DeviceConfig, DeviceType, getDeviceTopic } from "./base-device";
 import TuyaDevice, { DataPointSet } from "../../lib/tuya-driver/src/device";
 
 export type CoverState = "open" | "opening" | "closed" | "closing" | "unknown";
@@ -24,7 +24,7 @@ export class Cover extends DeviceBase {
   public override discoveryMessage(baseTopic: string) {
     const baseData = super.discoveryMessage(baseTopic)[`${this.type}/${this.name}/config`];
     
-    const topic = deviceTopic(this, baseTopic);
+    const topic = getDeviceTopic(this, baseTopic);
 
     const device = {
       ...baseData.device,

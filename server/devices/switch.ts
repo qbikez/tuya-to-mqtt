@@ -1,6 +1,17 @@
-import { DeviceBase, DeviceConfig, DeviceType } from "./base-device";
+import {
+  DeviceBase,
+  DeviceConfig,
+  DeviceType,
+  Sensor,
+  getDeviceTopic,
+} from "./base-device";
 import TuyaDevice, { DataPointSet } from "../../lib/tuya-driver/src/device";
-import { StateMessage } from "../homeassistant";
+import {
+  EntityDiscovery,
+  StateMessage,
+  deviceData,
+  discoveryData,
+} from "../homeassistant";
 
 export type SwitchState = "ON" | "OFF";
 
@@ -25,15 +36,25 @@ export class Switch extends DeviceBase {
     this.state = baseState === true ? "ON" : "OFF";
   }
 
-  override discoveryMessage(baseTopic: string) {
-    const baseData = super.discoveryMessage(baseTopic)[`${this.type}/${this.name}/config`];
+  override discoveryMessage(
+    baseTopic: string
+  ): Record<string, EntityDiscovery> {
+    const deviceTopic = getDeviceTopic(this, baseTopic);
+    const baseDiscovery = discoveryData(deviceTopic, this.name);
+    const baseData = super.discoveryMessage(baseTopic);
+    const devData = deviceData(
+      this.options.id + (this.options.idSuffix ?? ""),
+      this.displayName
+    );
+
     return {
+      ...baseData,
       [`${this.type}/${this.name}/config`]: {
         device: {
-          ...baseData.device,
+          ...devData,
           mdl: "Switch/Socket",
         },
-        ...baseData,
+        ...baseDiscovery,
       },
     };
   }
@@ -46,7 +67,34 @@ export class Switch extends DeviceBase {
     };
   }
 
-  override command(command: string, arg1: string | number | boolean) {
+  protected override getSensors(): Record<string, Sensor> {
+    const sensors: Record<string, Sensor> = {
+      "1": {
+        dpId: "1",
+        identifier: "switch_1",
+        values: [true, false],
+        type: "switch",
+      },
+      "9": {
+        dpId: "9",
+        identifier: "countdown_1",
+        values: [0, 86400],
+        pitch: 1,
+        scale: 0,
+        unit: "seconds",
+        type: "number",
+      },
+      "14": {
+        dpId: "14",
+        identifier: "relay_status",
+        values: ["off", "on", "memory"],
+      },
+    };
+
+    return sensors;
+  }
+
+  override command(command: string, arg1: string) {
     switch (command) {
       case "command": // open, close, stop
         const state = arg1.toString().toLowerCase();
@@ -55,7 +103,7 @@ export class Switch extends DeviceBase {
         this.setState(targetState);
         return true;
       default:
-        return false;
+        return super.command(command, arg1);
     }
   }
 }

@@ -31,27 +31,56 @@ describe("switch", () => {
           ids: ["someMagicId"],
           name: cfg.name,
           mf: "Tuya",
+          mdl: "Switch/Socket",
         },
       },
+      [`number/${sanitizedName}/countdown_1/config`]: expect.any(Object),
+      [`switch/${sanitizedName}/switch_1/config`]: expect.any(Object),
+      [`sensor/${sanitizedName}/relay_status/config`]: expect.any(Object)
     };
 
     const message = sw.discoveryMessage("tuya");
-    expect(message).toEqual(expected);
+    expect(message).toMatchObject(expected);
   });
 
   it("state message", () => {
-    const dps = { "1": true };
+    const dps = { "1": true, "9": 0, "14": "off" };
     deviceClient.getState = vitest.fn().mockReturnValue(dps);
 
     sw.onClientState(dps);
     const stateMessage = sw.stateMessage();
-    
+
     expect(stateMessage).toEqual({
       dps,
       id: undefined,
       ip: undefined,
       state: "ON",
       status: "offline",
+      sensors: {
+        "1": {
+          dpId: "1",
+          identifier: "switch_1",
+          type: "switch",
+          values: [true, false],
+        },
+        "14": {
+          dpId: "14",
+          identifier: "relay_status",
+          values: ["off", "on", "memory"],
+        },
+        "9": {
+          dpId: "9",
+          identifier: "countdown_1",
+          pitch: 1,
+          scale: 0,
+          type: "number",
+          unit: "seconds",
+          values: [0, 86400],
+        },
+      },
+      switch_1: true,
+      countdown_1: 0,
+      relay_status: "off",
     });
   });
 
