@@ -84,6 +84,15 @@ export class Switch extends DeviceBase {
         unit: "seconds",
         type: "number",
       },
+      "7": {
+        dpId: "7",
+        identifier: "countdown_1",
+        values: [0, 86400],
+        pitch: 1,
+        scale: 0,
+        unit: "seconds",
+        type: "number",
+      },
       "14": {
         dpId: "14",
         identifier: "relay_status",
