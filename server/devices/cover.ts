@@ -1,4 +1,4 @@
-import { DeviceBase, DeviceConfig, DeviceType, getDeviceTopic } from "./base-device";
+import { DeviceBase, DeviceConfig, DeviceType, Sensor, getDeviceTopic } from "./base-device";
 import TuyaDevice, { DataPointSet } from "../../lib/tuya-driver/src/device";
 
 export type CoverState = "open" | "opening" | "closed" | "closing" | "unknown";
@@ -20,18 +20,39 @@ export class Cover extends DeviceBase {
   constructor(options: DeviceConfig, client: TuyaDevice) {
     super(options, client);
   }
+  
+  protected override getSensors(): Record<string, Sensor> {
+    const sensors: Record<string, Sensor> = {
+      "1": {
+        dpId: "1",
+        identifier: "switch_1",
+        values: [true, false],
+        type: "switch",
+      },
+      "7": {
+        dpId: "7",
+        identifier: "backlight",
+        values: [true, false],
+        type: "switch",
+      },
+    };
+
+    return sensors;
+  }
 
   public override discoveryMessage(baseTopic: string) {
-    const baseData = super.discoveryMessage(baseTopic)[`${this.type}/${this.name}/config`];
+    const baseData = super.discoveryMessage(baseTopic);
+    
+    const baseSensor = baseData[`${this.type}/${this.name}/config`];
     
     const topic = getDeviceTopic(this, baseTopic);
 
     const device = {
-      ...baseData.device,
+      ...baseSensor.device,
       mdl: "Cover",
     };
     const message = {
-      ...baseData,
+      ...baseSensor,
       device,
       position_topic: `${topic}/position`,
       set_position_topic: `${topic}/set_position`,
@@ -39,6 +60,7 @@ export class Cover extends DeviceBase {
     };
 
     return {
+      ...baseData,
       [`${this.type}/${this.name}/config`]: message,
     };
   }
