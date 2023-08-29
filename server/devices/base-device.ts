@@ -199,11 +199,22 @@ export function mapDps(
   for (const [dp, value] of Object.entries(dps)) {
     const sensor = sensors[dp];
     if (sensor) {
-      const numberValue = value as number;
-      const scaledValue = sensor.scale
-        ? numberValue / Math.pow(10, sensor.scale)
-        : value;
-      result[sensor.identifier] = scaledValue;
+      switch (sensor.type) {
+        case "number":
+        case "sensor":
+          const numberValue = value as number;
+          const scaledValue = sensor.scale
+            ? numberValue / Math.pow(10, sensor.scale)
+            : value;
+          result[sensor.identifier] = scaledValue;
+          break;
+        case "switch":
+          result[sensor.identifier] = value ? "ON" : "OFF";
+          break;
+        default:
+          result[sensor.identifier] = value;
+          break;
+      }
     } else if (includeUnknown) {
       result[dp] = value;
     }
