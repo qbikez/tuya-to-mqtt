@@ -86,7 +86,7 @@ export class Switch extends DeviceBase {
       },
       "7": {
         dpId: "7",
-        identifier: "countdown_1",
+        identifier: "countdown_2",
         values: [0, 86400],
         pitch: 1,
         scale: 0,
