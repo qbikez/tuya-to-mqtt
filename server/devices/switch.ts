@@ -46,10 +46,10 @@ export class Switch extends DeviceBase {
     };
   }
 
-  override command(command: string, arg1: string) {
+  override command(command: string, arg1: string | number | boolean) {
     switch (command) {
       case "command": // open, close, stop
-        const state = arg1.toLowerCase();
+        const state = arg1.toString().toLowerCase();
         const targetState =
           state == "on" || state == "open" || state == "true" ? "ON" : "OFF";
         this.setState(targetState);

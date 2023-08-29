@@ -15,12 +15,12 @@ export type DeviceConfig = DeviceOptions & {
   idSuffix?: string;
 };
 
-
+export type DataPointValue = number | boolean | string;
 
 export type Sensor = {
   dpId: string;
   identifier: string;
-  values: Array<object | number | boolean | string>;
+  values: Array<DataPointValue>;
   pitch?: number;
   scale?: number;
   unit?: string;
@@ -121,4 +121,26 @@ export function mapDps(dps: DataPointSet, sensors: Record<string, Sensor>, inclu
 
 export function deviceTopic(device: DeviceBase, baseTopic: string) {
   return `${baseTopic}/${device.name}`;
+}
+
+
+
+export function commandToDps(sensors: Sensor[], command: string, arg1: string): DataPointSet | undefined {
+  const targetSensor =  sensors.find((sensor) => command === `set_${sensor.identifier}`);
+  if (targetSensor) {
+    const value = parseSensorValue(targetSensor, arg1);
+    return { [targetSensor.dpId]: value };
+  }
+  return undefined;
+}
+
+export function parseSensorValue(sensor: Sensor, value: string): DataPointValue {
+  switch (sensor.type) {
+    case "switch":
+      return value.toLowerCase() === "true" || value.toLowerCase() === "on";
+    case "number":
+      return parseInt(value);
+    default:
+      return value;
+  }
 }

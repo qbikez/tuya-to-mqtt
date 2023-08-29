@@ -5,6 +5,8 @@ import {
   mapDps,
   Sensor,
   deviceTopic as getDeviceTopic,
+  DataPointValue,
+  commandToDps,
 } from "./base-device";
 import TuyaDevice, { DataPointSet } from "../../lib/tuya-driver/src/device";
 import { Switch } from "./switch";
@@ -187,16 +189,15 @@ export class Plug extends Switch {
   }
 
   override command(command: string, arg1: string): boolean {
-    switch (command) {
-      case "set_countdown_1":
-        const countdown = parseInt(arg1);
-        this.setCountdown(countdown);
-        return true;
-      default:
-        return super.command(command, arg1);
+    const sensorCommand = commandToDps(Object.values(this.sensors), command, arg1);
+    if (sensorCommand) {
+      this.setClientState(sensorCommand);
+      return true;
     }
+    return super.command(command, arg1);
   }
-  
+
+
   setCountdown(countdown: number) {
     this.setClientState({ "9": countdown });
   }
