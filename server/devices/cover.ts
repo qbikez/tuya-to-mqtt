@@ -97,7 +97,7 @@ export class Cover extends DeviceBase {
         this.setState(state as CoverStateCommand);
         return true;
       default:
-        return false;
+        return super.command(command, arg1);
     }
   }
 

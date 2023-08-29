@@ -4,7 +4,14 @@ import TuyaDevice, {
 } from "../../lib/tuya-driver/src/device";
 
 import logfactory from "debug";
-import { DeviceDiscovery, EntityDiscovery, EntityType, StateMessage, deviceData, discoveryData } from "../homeassistant";
+import {
+  DeviceDiscovery,
+  EntityDiscovery,
+  EntityType,
+  StateMessage,
+  deviceData,
+  discoveryData,
+} from "../homeassistant";
 const log = logfactory("tuya:device");
 
 export type DeviceType = "cover" | "switch" | "plug" | "generic";
@@ -26,7 +33,6 @@ export type Sensor = {
   unit?: string;
   type?: EntityType;
 };
-
 
 export class DeviceBase {
   public type: DeviceType = "generic";
@@ -57,36 +63,35 @@ export class DeviceBase {
     return name.replace(/[^a-zA-Z0-9\-_]/g, "_").toLowerCase();
   }
 
-  protected sensorDiscovery(deviceTopic: string, device: DeviceDiscovery): Record<string, EntityDiscovery> {
+  protected sensorDiscovery(
+    deviceTopic: string,
+    device: DeviceDiscovery
+  ): Record<string, EntityDiscovery> {
     const sensorDiscovery = {};
-    
+
     Object.entries(this.getSensors()).forEach(([key, sensor]) => {
       const entityType = sensor.type ?? "sensor";
       const sensorTopic = `${entityType}/${this.name}/${sensor.identifier}/config`;
-      
-      const entitySpecific =
-        entityType === "number"
-          ? {
-              min: sensor.values[0],
-              max: sensor.values[1],
-              step: sensor.pitch,
-              command_topic: `${deviceTopic}/set_${sensor.identifier}`,
-            }
-          : {};
+
+      const entitySpecific = this.entitySpecificDiscovery(
+        entityType,
+        sensor,
+        deviceTopic
+      );
 
       const sensorMessage = {
         device,
         availability_topic: `${deviceTopic}/status`,
         payload_available: "online",
         payload_not_available: "offline",
-        
+
         unique_id: `${this.name}_${sensor.identifier}`,
         name: `${this.displayName} ${sensor.identifier}`,
-        
+
         unit_of_measurement: sensor.unit,
-        
+
         state_topic: `${deviceTopic}/${sensor.identifier}`,
-        
+
         ...entitySpecific,
         //value_template: `{{ value_json.${sensor.identifier} }}`,
       };
@@ -95,6 +100,28 @@ export class DeviceBase {
     });
 
     return sensorDiscovery;
+  }
+
+  private entitySpecificDiscovery(
+    entityType: string,
+    sensor: Sensor,
+    deviceTopic: string
+  ) {
+    switch (entityType) {
+      case "number":
+        return {
+          min: sensor.values[0],
+          max: sensor.values[1],
+          step: sensor.pitch,
+          command_topic: `${deviceTopic}/set_${sensor.identifier}`,
+        };
+      case "switch":
+        return {
+          command_topic: `${deviceTopic}/set_${sensor.identifier}`,
+        };
+      default:
+        return {};
+    }
   }
 
   public discoveryMessage(baseTopic: string): Record<string, EntityDiscovery> {
@@ -135,11 +162,7 @@ export class DeviceBase {
 
   public command(command: string, arg1: string): boolean {
     const sensors = this.getSensors();
-    const sensorCommand = commandToDps(
-      Object.values(sensors),
-      command,
-      arg1
-    );
+    const sensorCommand = commandToDps(Object.values(sensors), command, arg1);
     if (sensorCommand) {
       this.setClientState(sensorCommand);
       return true;
@@ -163,19 +186,25 @@ export class DeviceBase {
   }
 
   protected getSensors(): Record<string, Sensor> {
-    return {}
+    return {};
   }
 }
 
-export function mapDps(dps: DataPointSet, sensors: Record<string, Sensor>, includeUnknown = false): StateMessage {
+export function mapDps(
+  dps: DataPointSet,
+  sensors: Record<string, Sensor>,
+  includeUnknown = false
+): StateMessage {
   const result: StateMessage = {};
   for (const [dp, value] of Object.entries(dps)) {
     const sensor = sensors[dp];
     if (sensor) {
       const numberValue = value as number;
-      const scaledValue = sensor.scale ? numberValue / Math.pow(10, sensor.scale) : value;
+      const scaledValue = sensor.scale
+        ? numberValue / Math.pow(10, sensor.scale)
+        : value;
       result[sensor.identifier] = scaledValue;
-    } else if(includeUnknown) {
+    } else if (includeUnknown) {
       result[dp] = value;
     }
   }
@@ -186,10 +215,14 @@ export function getDeviceTopic(device: DeviceBase, baseTopic: string) {
   return `${baseTopic}/${device.name}`;
 }
 
-
-
-export function commandToDps(sensors: Sensor[], command: string, arg1: string): DataPointSet | undefined {
-  const targetSensor =  sensors.find((sensor) => command === `set_${sensor.identifier}`);
+export function commandToDps(
+  sensors: Sensor[],
+  command: string,
+  arg1: string
+): DataPointSet | undefined {
+  const targetSensor = sensors.find(
+    (sensor) => command === `set_${sensor.identifier}`
+  );
   if (targetSensor) {
     const value = parseSensorValue(targetSensor, arg1);
     return { [targetSensor.dpId]: value };
@@ -197,7 +230,10 @@ export function commandToDps(sensors: Sensor[], command: string, arg1: string): 
   return undefined;
 }
 
-export function parseSensorValue(sensor: Sensor, value: string): DataPointValue {
+export function parseSensorValue(
+  sensor: Sensor,
+  value: string
+): DataPointValue {
   switch (sensor.type) {
     case "switch":
       return value.toLowerCase() === "true" || value.toLowerCase() === "on";
