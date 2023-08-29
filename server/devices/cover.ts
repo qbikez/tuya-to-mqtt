@@ -69,13 +69,13 @@ export class Cover extends DeviceBase {
       case "set_position":
         const position = parseInt(arg1);
         this.setPosition(position);
-        return;
+        return true;
       case "command": // open, close, stop
         const state = arg1.toLowerCase();
         this.setState(state as CoverStateCommand);
-        return;
+        return true;
       default:
-        throw new Error(`Unknown command ${command} for device ${this.type}`);
+        return false;
     }
   }
 

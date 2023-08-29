@@ -53,9 +53,9 @@ export class Switch extends DeviceBase {
         const targetState =
           state == "on" || state == "open" || state == "true" ? "ON" : "OFF";
         this.setState(targetState);
-        return;
+        return true;
       default:
-        throw new Error(`Unknown command ${command} for device ${this.type}`);
+        return false;
     }
   }
 }

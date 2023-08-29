@@ -1,3 +1,5 @@
+export type EntityType = "cover" | "plug" | "switch" | "light" | "sensor" | "number";
+
 export type DeviceDiscovery = {
   ids: string[];
   name: string;

@@ -20,6 +20,7 @@ export class Plug extends Switch {
       dpId: "1",
       identifier: "switch_1",
       values: [true, false],
+      type: "switch",
     },
     "9": {
       dpId: "9",
@@ -28,6 +29,7 @@ export class Plug extends Switch {
       pitch: 1,
       scale: 0,
       unit: "seconds",
+      type: "number",
     },
     "17": {
       dpId: "17",
@@ -133,8 +135,19 @@ export class Plug extends Switch {
     const baseData = super.discoveryMessage(baseTopic);
     const sensorDiscovery = {};
     Object.entries(this.sensors).forEach(([key, sensor]) => {
-      const sensorTopic = `sensor/${this.name}/${sensor.identifier}/config`;
+      const entityType = sensor.type ?? "sensor";
+      const sensorTopic = `${entityType}/${this.name}/${sensor.identifier}/config`;
       const deviceTopic = getDeviceTopic(this, baseTopic);
+
+      const entitySpecific =
+        entityType === "number"
+          ? {
+              min: sensor.values[0],
+              max: sensor.values[1],
+              step: sensor.pitch,
+              command_topic: `${deviceTopic}/set_${sensor.identifier}`,
+            }
+          : {};
 
       const sensorMessage = {
         device,
@@ -143,8 +156,10 @@ export class Plug extends Switch {
         name: `${this.displayName} ${sensor.identifier}`,
         unit_of_measurement: sensor.unit,
         state_topic: `${deviceTopic}/${sensor.identifier}`,
+        ...entitySpecific,
         //value_template: `{{ value_json.${sensor.identifier} }}`,
       };
+
       sensorDiscovery[sensorTopic] = sensorMessage;
     });
 
@@ -169,5 +184,20 @@ export class Plug extends Switch {
 
   override onClientState(dps: DataPointSet): void {
     super.onClientState(dps);
+  }
+
+  override command(command: string, arg1: string): boolean {
+    switch (command) {
+      case "set_countdown_1":
+        const countdown = parseInt(arg1);
+        this.setCountdown(countdown);
+        return true;
+      default:
+        return super.command(command, arg1);
+    }
+  }
+  
+  setCountdown(countdown: number) {
+    this.setClientState({ "9": countdown });
   }
 }

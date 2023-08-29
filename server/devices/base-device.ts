@@ -4,7 +4,7 @@ import TuyaDevice, {
 } from "../../lib/tuya-driver/src/device";
 
 import logfactory from "debug";
-import { EntityDiscovery, StateMessage, deviceData, discoveryData } from "../homeassistant";
+import { EntityDiscovery, EntityType, StateMessage, deviceData, discoveryData } from "../homeassistant";
 const log = logfactory("tuya:device");
 
 export type DeviceType = "cover" | "switch" | "plug" | "generic";
@@ -16,6 +16,7 @@ export type DeviceConfig = DeviceOptions & {
 };
 
 
+
 export type Sensor = {
   dpId: string;
   identifier: string;
@@ -23,6 +24,7 @@ export type Sensor = {
   pitch?: number;
   scale?: number;
   unit?: string;
+  type?: EntityType;
 };
 
 
@@ -81,7 +83,7 @@ export class DeviceBase {
     };
   }
 
-  public command(command: string, arg1: string) {
+  public command(command: string, arg1: string): boolean {
     throw new Error("Method not implemented.");
   }
 

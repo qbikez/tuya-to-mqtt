@@ -112,7 +112,11 @@ mqttClient.on("message", (topic, payload, packet) => {
       return;
     }
 
-    device.command(command, payload.toString());
+    const processed = device.command(command, payload.toString());
+    if (!processed) {
+      throw new Error(`Command '${command}' not understood`);
+      return;
+    }
   } catch (err) {
     console.error(err);
     //mqttlog("Error processing MQTT message", err);
