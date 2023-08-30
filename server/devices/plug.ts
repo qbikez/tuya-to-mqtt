@@ -49,6 +49,7 @@ export class Plug extends Switch {
         pitch: 100,
         scale: 3,
         unit: "kWh",
+        device_class: "energy"
       },
       "18": {
         dpId: "18",
@@ -57,6 +58,7 @@ export class Plug extends Switch {
         pitch: 1,
         scale: 0,
         unit: "mA",
+        device_class: "current"
       },
       "19": {
         dpId: "19",
@@ -65,6 +67,7 @@ export class Plug extends Switch {
         pitch: 1,
         scale: 1,
         unit: "W",
+        device_class: "power"
       },
       "20": {
         dpId: "20",

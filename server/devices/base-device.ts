@@ -32,6 +32,7 @@ export type Sensor = {
   scale?: number;
   unit?: string;
   type?: EntityType;
+  device_class?: string;
 };
 
 export class DeviceBase {
@@ -119,6 +120,10 @@ export class DeviceBase {
         return {
           command_topic: `${deviceTopic}/set_${sensor.identifier}`,
         };
+      case "sensor": 
+      return {
+        device_class: sensor.device_class ?? "None" 
+      }
       default:
         return {};
     }
