@@ -1,4 +1,10 @@
-import { DeviceBase, DeviceConfig, DeviceType, Sensor, getDeviceTopic } from "./base-device";
+import {
+  DeviceBase,
+  DeviceConfig,
+  DeviceType,
+  Sensor,
+  getDeviceTopic,
+} from "./base-device";
 import TuyaDevice, { DataPointSet } from "../../lib/tuya-driver/src/device";
 
 export type CoverState = "open" | "opening" | "closed" | "closing" | "unknown";
@@ -20,7 +26,7 @@ export class Cover extends DeviceBase {
   constructor(options: DeviceConfig, client: TuyaDevice) {
     super(options, client);
   }
-  
+
   protected override getSensors(): Record<string, Sensor> {
     const sensors: Record<string, Sensor> = {
       "1": {
@@ -42,9 +48,9 @@ export class Cover extends DeviceBase {
 
   public override discoveryMessage(baseTopic: string) {
     const baseData = super.discoveryMessage(baseTopic);
-    
+
     const baseSensor = baseData[`${this.type}/${this.name}/config`];
-    
+
     const topic = getDeviceTopic(this, baseTopic);
 
     const device = {
@@ -65,8 +71,8 @@ export class Cover extends DeviceBase {
     };
   }
 
-  public override stateMessage() {
-    const baseData = super.stateMessage();
+  public override stateMessage(dps: DataPointSet) {
+    const baseData = super.stateMessage(dps);
     return {
       ...baseData,
       [`state`]: this.state,
@@ -77,13 +83,15 @@ export class Cover extends DeviceBase {
   override onClientState(dps: DataPointSet) {
     super.onClientState(dps);
 
-    const baseState = dps["1"] as CoverStateDp;
-    const isMoving = baseState == "open" || baseState == "close";
-    if (isMoving) {
-      this.lastMove = baseState == "open" ? "up" : "down";
+    if (dps["1"] !== undefined) {
+      const baseState = dps["1"] as CoverStateDp;
+      const isMoving = baseState == "open" || baseState == "close";
+      if (isMoving) {
+        this.lastMove = baseState == "open" ? "up" : "down";
+      }
+      this.state = Cover.toCoverState(baseState, this.lastMove);
+      this.position = Cover.getPosition(this.state, this.lastMove);
     }
-    this.state = Cover.toCoverState(baseState, this.lastMove);
-    this.position = Cover.getPosition(this.state, this.lastMove);
   }
 
   override command(command: string, arg1: string) {

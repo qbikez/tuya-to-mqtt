@@ -42,8 +42,7 @@ describe("plug", () => {
     const dps = { "1": true };
     deviceClient.getState = vitest.fn().mockReturnValue(dps);
 
-    plug.onClientState(dps);
-    const stateMessage = plug.stateMessage();
+    const stateMessage = plug.stateMessage(dps);
     
     expect(stateMessage).toEqual({
       dps,

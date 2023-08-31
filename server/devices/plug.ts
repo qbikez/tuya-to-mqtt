@@ -150,10 +150,6 @@ export class Plug extends Switch {
     };
   }
 
-  override stateMessage(): StateMessage {
-    return super.stateMessage();
-  }
-
   override onClientState(dps: DataPointSet): void {
     super.onClientState(dps);
   }

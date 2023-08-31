@@ -59,8 +59,8 @@ export class Switch extends DeviceBase {
     };
   }
 
-  public override stateMessage(): StateMessage {
-    const baseData = super.stateMessage();
+  public override stateMessage(dps: DataPointSet): StateMessage {
+    const baseData = super.stateMessage(dps);
     return {
       ...baseData,
       [`state`]: this.state,

@@ -16,9 +16,8 @@ describe("base device", () => {
   it("state message", () => {
     const dps = { "1": "open" };
     deviceClient.getState = vitest.fn().mockReturnValue(dps);
-    baseDevice.onClientState(dps);
-
-    const stateMessage = baseDevice.stateMessage();
+    
+    const stateMessage = baseDevice.stateMessage(dps);
     expect(stateMessage).toEqual({
       dps: { "1": "open" },
       id: undefined,

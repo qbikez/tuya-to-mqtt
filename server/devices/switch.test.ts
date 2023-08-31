@@ -48,7 +48,7 @@ describe("switch", () => {
     deviceClient.getState = vitest.fn().mockReturnValue(dps);
 
     sw.onClientState(dps);
-    const stateMessage = sw.stateMessage();
+    const stateMessage = sw.stateMessage(dps);
 
     expect(stateMessage).toEqual({
       dps,

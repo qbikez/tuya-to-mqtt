@@ -45,8 +45,7 @@ describe("cover", () => {
     const dps = { "1": "open" };
     deviceClient.getState = vitest.fn().mockReturnValue(dps);
 
-    cover.onClientState(dps);
-    const stateMessage = cover.stateMessage();
+    const stateMessage = cover.stateMessage(dps);
     expect(stateMessage).toEqual({
       dps: { "1": "open" },
       id: undefined,

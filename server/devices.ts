@@ -1,10 +1,11 @@
 import fs from "fs";
-import TuyaDevice from "../lib/tuya-driver/src/device";
+import TuyaDevice, { DataPointSet } from "../lib/tuya-driver/src/device";
 import { Find } from "../lib/tuya-driver/src/find";
 
 import logfactory from "debug";
 import { createDevice } from "./device-classes";
 import { DeviceBase, DeviceConfig, getDeviceTopic } from "./devices/base-device";
+import { emit } from "process";
 const log = logfactory("tuya:discovery");
 
 export type DeviceWrapper = {
@@ -24,7 +25,8 @@ export function initDevices(configPath: string) {
 
 export function listenToBroadcast(
   devices: DeviceWrapper[],
-  onUpdate: (device: DeviceWrapper) => Promise<void>
+  onUpdate: (device: DeviceWrapper) => Promise<void>,
+  onDeviceState: (state: DataPointSet, device:DeviceWrapper) => Promise<void>
 ) {
   const find = new Find();
   find.on("broadcast", (msg) => {
@@ -44,6 +46,9 @@ export function listenToBroadcast(
         ...device.config,
       });
       device.device = createDevice(msg, device.config, device.client);
+      device.device.on("stateChanged", (state) => {
+        void onDeviceState(state, device);
+      });
     }
     if (device.client && !device.client.connected) {
       log(`connecting device ${device.config.name} at ${device.config.ip}`);

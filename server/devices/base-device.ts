@@ -12,6 +12,7 @@ import {
   deviceData,
   discoveryData,
 } from "../homeassistant";
+import { TypedEventEmitter } from "../shared/event-emiter";
 const log = logfactory("tuya:device");
 
 export type DeviceType = "cover" | "switch" | "plug" | "generic";
@@ -34,19 +35,29 @@ export type Sensor = {
   type?: EntityType;
 };
 
-export class DeviceBase {
+export interface DeviceCallbacks {
+  stateChanged: (state: DataPointSet) => void;
+}
+
+export class DeviceBase extends TypedEventEmitter<DeviceCallbacks> {
   public type: DeviceType = "generic";
   public displayName: string;
   public name: string;
   log: logfactory.Debugger;
   dps: DataPointSet = {};
+  lastStateChange: DataPointSet = {};
 
   constructor(protected options: DeviceConfig, protected client: TuyaDevice) {
+    super();
+
     this.displayName = (options.name ?? options.id) + (options.idSuffix ?? "");
     this.name = this.sanitizeName(options.name) + (options.idSuffix ?? "");
     this.log = logfactory(`tuya:device:${this.name}`);
 
-    client.on("state-change", (state) => this.onClientState(state));
+    client.on("state-change", (state) => {
+      this.onClientState(state);
+      this.emit("stateChanged", state);
+    });
     client.on("connected", () => {
       this.log("connected");
       this.refreshClientState();
@@ -142,7 +153,11 @@ export class DeviceBase {
     };
   }
 
-  public stateMessage(): StateMessage {
+  public fullStateMessage(): StateMessage {
+    return this.stateMessage(this.dps);
+  }
+
+  public stateMessage(dps: DataPointSet): StateMessage {
     const defaultState = {
       [`state`]: {},
       [`status`]: this.client.connected ? "online" : "offline",
@@ -152,7 +167,7 @@ export class DeviceBase {
     };
 
     const sensors = this.getSensors();
-    var mapped = mapDps(this.dps, sensors, false);
+    var mapped = mapDps(dps, sensors, false);
     return {
       ...defaultState,
       ...mapped,
@@ -176,9 +191,10 @@ export class DeviceBase {
     this.refreshClientState();
   }
 
-  public onClientState(state: DataPointSet) {
-    this.log(`state change`, state);
+  public onClientState(changed: DataPointSet) {
+    this.log(`state change`, changed);
     this.dps = this.client.getState();
+    this.lastStateChange = changed;
   }
 
   protected refreshClientState() {

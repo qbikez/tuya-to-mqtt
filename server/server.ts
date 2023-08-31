@@ -1,9 +1,15 @@
 import express from "express";
-import { findByTopic, initDevices, listenToBroadcast } from "./devices";
+import {
+  DeviceWrapper,
+  findByTopic,
+  initDevices,
+  listenToBroadcast,
+} from "./devices";
 import * as mqtt from "mqtt";
 
 import logfactory from "debug";
 import { getDeviceTopic } from "./devices/base-device";
+import { DataPointSet } from "../lib/tuya-driver/src/device";
 const log = logfactory("tuya:server");
 const mqttlog = logfactory("tuya:mqtt");
 
@@ -55,7 +61,8 @@ mqttClient.on("close", () => {
 log("starting device dicsovery");
 
 const devices = initDevices("config/devices.json");
-listenToBroadcast(devices, async (deviceWrapper) => {
+
+const onDeviceDiscovery = async (deviceWrapper: DeviceWrapper) => {
   const { device } = deviceWrapper;
   if (!device) return;
 
@@ -68,15 +75,34 @@ listenToBroadcast(devices, async (deviceWrapper) => {
     );
   }
 
-  const stateMessage = device.stateMessage();
+  const stateMessage = device.fullStateMessage();
   for (const [subTopic, payload] of Object.entries(stateMessage)) {
-    const topic = getDeviceTopic(device, config.mqtt.deviceTopic) + "/" + subTopic;
+    const topic =
+      getDeviceTopic(device, config.mqtt.deviceTopic) + "/" + subTopic;
     await mqttClient.publishAsync(
       topic,
       payload instanceof Object ? JSON.stringify(payload) : `${payload}`
     );
   }
-});
+};
+
+const onDeviceState = async (
+  dps: DataPointSet,
+  deviceWrapper: DeviceWrapper
+) => {
+  const { device } = deviceWrapper;
+  const stateMessage = device.stateMessage(dps);
+  for (const [subTopic, payload] of Object.entries(stateMessage)) {
+    const topic =
+      getDeviceTopic(device, config.mqtt.deviceTopic) + "/" + subTopic;
+    await mqttClient.publishAsync(
+      topic,
+      payload instanceof Object ? JSON.stringify(payload) : `${payload}`
+    );
+  }
+};
+
+listenToBroadcast(devices, onDeviceDiscovery, onDeviceState);
 
 mqttClient.on("message", (topic, payload, packet) => {
   const regex = new RegExp(
