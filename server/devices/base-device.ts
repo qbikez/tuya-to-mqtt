@@ -33,6 +33,7 @@ export type Sensor = {
   scale?: number;
   unit?: string;
   type?: EntityType;
+  device_class?: string;
 };
 
 export interface DeviceCallbacks {
@@ -130,6 +131,10 @@ export class DeviceBase extends TypedEventEmitter<DeviceCallbacks> {
         return {
           command_topic: `${deviceTopic}/set_${sensor.identifier}`,
         };
+      case "sensor": 
+      return {
+        device_class: sensor.device_class ?? "None" 
+      }
       default:
         return {};
     }
