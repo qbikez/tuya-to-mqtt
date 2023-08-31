@@ -75,15 +75,15 @@ const onDeviceDiscovery = async (deviceWrapper: DeviceWrapper) => {
     );
   }
 
-  const stateMessage = device.fullStateMessage();
-  for (const [subTopic, payload] of Object.entries(stateMessage)) {
-    const topic =
-      getDeviceTopic(device, config.mqtt.deviceTopic) + "/" + subTopic;
-    await mqttClient.publishAsync(
-      topic,
-      payload instanceof Object ? JSON.stringify(payload) : `${payload}`
-    );
-  }
+  // const stateMessage = device.fullStateMessage();
+  // for (const [subTopic, payload] of Object.entries(stateMessage)) {
+  //   const topic =
+  //     getDeviceTopic(device, config.mqtt.deviceTopic) + "/" + subTopic;
+  //   await mqttClient.publishAsync(
+  //     topic,
+  //     payload instanceof Object ? JSON.stringify(payload) : `${payload}`
+  //   );
+  // }
 };
 
 const onDeviceState = async (
