@@ -17,39 +17,116 @@ describe("plug", () => {
   const sanitizedName = plug.name;
 
   it("discoveryPayload for switch", () => {
-    const expected = {
-      [`switch/${sanitizedName}/config`]: {
-        name: `${sanitizedName}`,
-        state_topic: `tuya/${sanitizedName}/state`,
-        command_topic: `tuya/${sanitizedName}/command`,
-        availability_topic: `tuya/${sanitizedName}/status`,
-        payload_available: "online",
-        payload_not_available: "offline",
-        unique_id: `${sanitizedName}`,
-        device: {
-          ids: ["someMagicId"],
-          name: cfg.name,
-          mf: "Tuya",
-        },
-      },
-    };
-
     const message = plug.discoveryMessage("tuya");
-    expect(message).toEqual(expected);
+    expect(message).toMatchInlineSnapshot(`
+      {
+        "number/myplug_/countdown_1/config": {
+          "availability_topic": "tuya/myplug_/status",
+          "command_topic": "tuya/myplug_/set_countdown_1",
+          "device": {
+            "ids": [
+              "someMagicId",
+            ],
+            "mf": "Tuya",
+            "name": "myPlug+",
+          },
+          "max": 86400,
+          "min": 0,
+          "name": "myPlug+ countdown_1",
+          "payload_available": "online",
+          "payload_not_available": "offline",
+          "state_topic": "tuya/myplug_/countdown_1",
+          "step": 1,
+          "unique_id": "myplug__countdown_1",
+          "unit_of_measurement": "seconds",
+        },
+        "number/myplug_/countdown_2/config": {
+          "availability_topic": "tuya/myplug_/status",
+          "command_topic": "tuya/myplug_/set_countdown_2",
+          "device": {
+            "ids": [
+              "someMagicId",
+            ],
+            "mf": "Tuya",
+            "name": "myPlug+",
+          },
+          "max": 86400,
+          "min": 0,
+          "name": "myPlug+ countdown_2",
+          "payload_available": "online",
+          "payload_not_available": "offline",
+          "state_topic": "tuya/myplug_/countdown_2",
+          "step": 1,
+          "unique_id": "myplug__countdown_2",
+          "unit_of_measurement": "seconds",
+        },
+        "sensor/myplug_/relay_status/config": {
+          "availability_topic": "tuya/myplug_/status",
+          "device": {
+            "ids": [
+              "someMagicId",
+            ],
+            "mf": "Tuya",
+            "name": "myPlug+",
+          },
+          "name": "myPlug+ relay_status",
+          "payload_available": "online",
+          "payload_not_available": "offline",
+          "state_topic": "tuya/myplug_/relay_status",
+          "unique_id": "myplug__relay_status",
+          "unit_of_measurement": undefined,
+        },
+        "switch/myplug_/config": {
+          "availability_topic": "tuya/myplug_/status",
+          "command_topic": "tuya/myplug_/command",
+          "device": {
+            "ids": [
+              "someMagicId",
+            ],
+            "mdl": "Switch/Socket",
+            "mf": "Tuya",
+            "name": "myPlug+",
+          },
+          "name": "myplug_",
+          "payload_available": "online",
+          "payload_not_available": "offline",
+          "state_topic": "tuya/myplug_/state",
+          "unique_id": "myplug_",
+        },
+        "switch/myplug_/switch_1/config": {
+          "availability_topic": "tuya/myplug_/status",
+          "command_topic": "tuya/myplug_/set_switch_1",
+          "device": {
+            "ids": [
+              "someMagicId",
+            ],
+            "mf": "Tuya",
+            "name": "myPlug+",
+          },
+          "name": "myPlug+ switch_1",
+          "payload_available": "online",
+          "payload_not_available": "offline",
+          "state_topic": "tuya/myplug_/switch_1",
+          "unique_id": "myplug__switch_1",
+          "unit_of_measurement": undefined,
+        },
+      }
+    `);
   });
-  
+
   it("state message", () => {
     const dps = { "1": true };
-    deviceClient.getState = vitest.fn().mockReturnValue(dps);
 
     const stateMessage = plug.stateMessage(dps);
-    
+
     expect(stateMessage).toEqual({
       dps,
       id: undefined,
       ip: undefined,
       state: "ON",
       status: "offline",
+      switch_1: "ON",
+      sensors: expect.anything(),
     });
   });
 

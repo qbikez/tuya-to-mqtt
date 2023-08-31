@@ -30,10 +30,15 @@ export class Switch extends DeviceBase {
 
   override onClientState(dps: DataPointSet) {
     super.onClientState(dps);
+    this.state = this.getMainState(dps);
+  }
 
-    const baseState = dps["1"] as boolean;
+  private getMainState(dps: DataPointSet): SwitchState | undefined {
+    if (dps["1"] === undefined ) return undefined;
+    
+    const mainState = dps["1"] as boolean;
 
-    this.state = baseState === true ? "ON" : "OFF";
+    return mainState === true ? "ON" : "OFF";
   }
 
   override discoveryMessage(
@@ -63,7 +68,7 @@ export class Switch extends DeviceBase {
     const baseData = super.stateMessage(dps);
     return {
       ...baseData,
-      [`state`]: this.state,
+      [`state`]: this.getMainState(dps) ?? this.state,
     };
   }
 

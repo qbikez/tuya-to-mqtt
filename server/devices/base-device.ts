@@ -161,7 +161,7 @@ export class DeviceBase extends TypedEventEmitter<DeviceCallbacks> {
     const defaultState = {
       [`state`]: {},
       [`status`]: this.client.connected ? "online" : "offline",
-      [`dps`]: this.dps,
+      [`dps`]: dps,
       [`ip`]: this.client.ip,
       [`id`]: this.client.id,
     };

@@ -36,7 +36,7 @@ describe("switch", () => {
       },
       [`number/${sanitizedName}/countdown_1/config`]: expect.any(Object),
       [`switch/${sanitizedName}/switch_1/config`]: expect.any(Object),
-      [`sensor/${sanitizedName}/relay_status/config`]: expect.any(Object)
+      [`sensor/${sanitizedName}/relay_status/config`]: expect.any(Object),
     };
 
     const message = sw.discoveryMessage("tuya");
@@ -68,6 +68,15 @@ describe("switch", () => {
           identifier: "relay_status",
           values: ["off", "on", "memory"],
         },
+        "7": {
+          dpId: "7",
+          identifier: "countdown_2",
+          pitch: 1,
+          scale: 0,
+          type: "number",
+          unit: "seconds",
+          values: [0, 86400],
+        },
         "9": {
           dpId: "9",
           identifier: "countdown_1",
@@ -78,7 +87,7 @@ describe("switch", () => {
           values: [0, 86400],
         },
       },
-      switch_1: true,
+      switch_1: "ON",
       countdown_1: 0,
       relay_status: "off",
     });

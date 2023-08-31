@@ -73,25 +73,39 @@ export class Cover extends DeviceBase {
 
   public override stateMessage(dps: DataPointSet) {
     const baseData = super.stateMessage(dps);
+
+    const { state, position, lastMove } = this.getBaseState(dps);
     return {
       ...baseData,
-      [`state`]: this.state,
-      [`position`]: this.position,
+      [`state`]: state,
+      [`position`]: position,
+      [`last_move`]: lastMove,
     };
   }
 
   override onClientState(dps: DataPointSet) {
     super.onClientState(dps);
+    const { state, position, lastMove } = this.getBaseState(dps);
+    
+    this.state = state ?? this.state;
+    this.position = position ?? this.position;
+    this.lastMove = lastMove ?? this.lastMove;
+  }
 
-    if (dps["1"] !== undefined) {
-      const baseState = dps["1"] as CoverStateDp;
-      const isMoving = baseState == "open" || baseState == "close";
-      if (isMoving) {
-        this.lastMove = baseState == "open" ? "up" : "down";
-      }
-      this.state = Cover.toCoverState(baseState, this.lastMove);
-      this.position = Cover.getPosition(this.state, this.lastMove);
-    }
+  private getBaseState(dps: DataPointSet) {
+    if (dps["1"] === undefined) return undefined;
+
+    const baseState = dps["1"] as CoverStateDp;
+    const isMoving = baseState == "open" || baseState == "close";
+    const lastMove = isMoving
+      ? baseState == "open"
+        ? "up"
+        : "down"
+      : this.lastMove;
+    const state = Cover.toCoverState(baseState, lastMove);
+    const position = Cover.getPosition(this.state, lastMove);
+
+    return { state, position, lastMove };
   }
 
   override command(command: string, arg1: string) {
