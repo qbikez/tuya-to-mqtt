@@ -8,7 +8,7 @@ import {
 import * as mqtt from "mqtt";
 
 import logfactory from "debug";
-import { getDeviceTopic } from "./devices/base-device";
+import { DeviceBase, getDeviceTopic } from "./devices/base-device";
 import { DataPointSet } from "../lib/tuya-driver/src/device";
 import * as fs from "fs";
 const log = logfactory("tuya:server");
@@ -55,8 +55,9 @@ mqttClient.on("connect", async () => {
   mqttlog("Connected to MQTT server");
   const topic = `${config.homeassistant.device_topic}/#`;
   mqttlog(`subscribing to ${topic}`);
-  const grants = await mqttClient.subscribeAsync(topic);
-  mqttlog(`subscribed to ${topic}`, grants);
+  await mqttClient.subscribeAsync(topic);
+  mqttlog(`subscribing to ${config.homeassistant.status_topic}`);
+  await mqttClient.subscribeAsync(config.homeassistant.status_topic);
 });
 mqttClient.on("reconnect", () => {
   mqttlog(
@@ -81,24 +82,7 @@ const onDeviceDiscovery = async (deviceWrapper: DeviceWrapper) => {
   const { device } = deviceWrapper;
   if (!device) return;
 
-  const discoveryMessages = device.discoveryMessage(config.homeassistant.device_topic);
-
-  for (const [topic, payload] of Object.entries(discoveryMessages)) {
-    mqttClient.publishAsync(
-      `${config.homeassistant.discovery_topic}/${topic}`,
-      JSON.stringify(payload)
-    );
-  }
-
-  // const stateMessage = device.fullStateMessage();
-  // for (const [subTopic, payload] of Object.entries(stateMessage)) {
-  //   const topic =
-  //     getDeviceTopic(device, config.mqtt.deviceTopic) + "/" + subTopic;
-  //   await mqttClient.publishAsync(
-  //     topic,
-  //     payload instanceof Object ? JSON.stringify(payload) : `${payload}`
-  //   );
-  // }
+  publishDeviceDiscovery(device);
 };
 
 const onDeviceState = async (
@@ -106,20 +90,22 @@ const onDeviceState = async (
   deviceWrapper: DeviceWrapper
 ) => {
   const { device } = deviceWrapper;
-  const stateMessage = device.stateMessage(dps);
-  for (const [subTopic, payload] of Object.entries(stateMessage)) {
-    const topic =
-      getDeviceTopic(device, config.homeassistant.device_topic) + "/" + subTopic;
-    await mqttClient.publishAsync(
-      topic,
-      payload instanceof Object ? JSON.stringify(payload) : `${payload}`
-    );
-  }
+  await publishDeviceState(device, dps);
 };
 
 listenToBroadcast(devices, onDeviceDiscovery, onDeviceState);
 
 mqttClient.on("message", (topic, payload, packet) => {
+  if (topic === config.homeassistant.status_topic) {
+    devices.forEach((deviceWrapper) => {
+      const { device } = deviceWrapper;
+      if (!device) return;
+      publishDeviceDiscovery(device);
+      publishDeviceState(device);
+    });
+    return;
+  }
+  
   const regex = new RegExp(
     `^${config.homeassistant.device_topic}/(?<device_id>[^/]+)/(?<command>.+)`
   );
@@ -171,3 +157,26 @@ app.get("/", (_, res) => {
 //if ((import.meta as any).env.PROD)
 app.listen(3000);
 export const viteNodeApp = app;
+
+async function publishDeviceState(device: DeviceBase, dps?: DataPointSet) {
+  const stateMessage = !!dps ? device.stateMessage(dps) : device.fullStateMessage();
+  for (const [subTopic, payload] of Object.entries(stateMessage)) {
+    const topic = getDeviceTopic(device, config.homeassistant.device_topic) + "/" + subTopic;
+    await mqttClient.publishAsync(
+      topic,
+      payload instanceof Object ? JSON.stringify(payload) : `${payload}`
+    );
+  }
+}
+
+function publishDeviceDiscovery(device: DeviceBase) {
+  const discoveryMessages = device.discoveryMessage(config.homeassistant.device_topic);
+
+  for (const [topic, payload] of Object.entries(discoveryMessages)) {
+    mqttClient.publishAsync(
+      `${config.homeassistant.discovery_topic}/${topic}`,
+      JSON.stringify(payload)
+    );
+  }
+}
+
