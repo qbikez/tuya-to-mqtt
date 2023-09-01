@@ -10,27 +10,42 @@ import * as mqtt from "mqtt";
 import logfactory from "debug";
 import { getDeviceTopic } from "./devices/base-device";
 import { DataPointSet } from "../lib/tuya-driver/src/device";
+import * as fs from "fs";
 const log = logfactory("tuya:server");
 const mqttlog = logfactory("tuya:mqtt");
 
-const app = express();
-
-const config = {
+const defaultConfig = {
   mqtt: {
-    host: "192.168.1.9",
-    discoveryTopic: "homeassistant/discovery",
-    deviceTopic: "tuya2",
+    host: "127.0.0.1",
+    port: 1883,
+    username: "",
+    password: "",
+  },
+  homeassistant: {
+    discovery_topic: "homeassistant/discovery",
+    device_topic: "tuya",
+    status_topic: "homeassistant/status",
   },
 };
+
+type Config = typeof defaultConfig;
+
+const app = express();
+
+const userconfig = JSON.parse(
+  fs.readFileSync("config/config.json", "utf-8")
+) as Config;
+const config = { ...defaultConfig, ...userconfig };
 
 mqttlog("connecting MQTT client");
 
 const mqttClient = mqtt.connect({
   host: config.mqtt.host,
-  port: 1883,
+  port: config.mqtt.port,
+  username: config.mqtt.username,
+  password: config.mqtt.password,
   reconnectPeriod: 100,
-  clientId: "tuya2",
-  //log: mqttlog,
+  clientId: "tuya-mqtt",
 });
 
 mqttClient.on("error", (error) => {
@@ -38,7 +53,7 @@ mqttClient.on("error", (error) => {
 });
 mqttClient.on("connect", async () => {
   mqttlog("Connected to MQTT server");
-  const topic = `${config.mqtt.deviceTopic}/#`;
+  const topic = `${config.homeassistant.device_topic}/#`;
   mqttlog(`subscribing to ${topic}`);
   const grants = await mqttClient.subscribeAsync(topic);
   mqttlog(`subscribed to ${topic}`, grants);
@@ -66,11 +81,11 @@ const onDeviceDiscovery = async (deviceWrapper: DeviceWrapper) => {
   const { device } = deviceWrapper;
   if (!device) return;
 
-  const discoveryMessages = device.discoveryMessage(config.mqtt.deviceTopic);
+  const discoveryMessages = device.discoveryMessage(config.homeassistant.device_topic);
 
   for (const [topic, payload] of Object.entries(discoveryMessages)) {
     mqttClient.publishAsync(
-      `${config.mqtt.discoveryTopic}/${topic}`,
+      `${config.homeassistant.discovery_topic}/${topic}`,
       JSON.stringify(payload)
     );
   }
@@ -94,7 +109,7 @@ const onDeviceState = async (
   const stateMessage = device.stateMessage(dps);
   for (const [subTopic, payload] of Object.entries(stateMessage)) {
     const topic =
-      getDeviceTopic(device, config.mqtt.deviceTopic) + "/" + subTopic;
+      getDeviceTopic(device, config.homeassistant.device_topic) + "/" + subTopic;
     await mqttClient.publishAsync(
       topic,
       payload instanceof Object ? JSON.stringify(payload) : `${payload}`
@@ -106,7 +121,7 @@ listenToBroadcast(devices, onDeviceDiscovery, onDeviceState);
 
 mqttClient.on("message", (topic, payload, packet) => {
   const regex = new RegExp(
-    `^${config.mqtt.deviceTopic}/(?<device_id>[^/]+)/(?<command>.+)`
+    `^${config.homeassistant.device_topic}/(?<device_id>[^/]+)/(?<command>.+)`
   );
   const matches = regex.exec(topic);
 
@@ -126,7 +141,7 @@ mqttClient.on("message", (topic, payload, packet) => {
   mqttlog("MQTT message", topic, payload.toString(), packet);
 
   try {
-    const found = findByTopic(devices, config.mqtt.deviceTopic, topic);
+    const found = findByTopic(devices, config.homeassistant.device_topic, topic);
     if (!found) {
       mqttlog("Device not found for topic", topic);
       return;
