@@ -32,11 +32,12 @@ export function listenToBroadcast(
   find.on("broadcast", (msg) => {
     const device = devices.find((d) => d.config.id == msg.gwId);
     if (!device) {
-      log(`Found unlisted device ${msg.gwId} ${msg.ip}`);
+      log(`Found unlisted device ${msg.gwId} ${msg.ip}`, msg);
       return;
     }
 
     device.config.ip = msg.ip;
+    device.config.version ??= parseFloat(msg.version);
     
     if (!device.client) {
       log(`discovered NEW device ${device.config.name} at ${device.config.ip}`);
