@@ -1,0 +1,13 @@
+{
+  "mqtt": {
+    "host": "127.0.0.1",
+    "port": 1883,
+    "username": "",
+    "password": ""
+  },
+  "homeassistant": {
+    "discovery_topic": "homeassistant/discovery",
+    "device_topic": "tuya",
+    "status_topic": "homeassistant/status"
+  }
+}
