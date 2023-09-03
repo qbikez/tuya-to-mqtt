@@ -5,7 +5,6 @@ import { Find } from "../lib/tuya-driver/src/find";
 import logfactory from "debug";
 import { createDevice } from "./device-classes";
 import { DeviceBase, DeviceConfig, getDeviceTopic } from "./devices/base-device";
-import { emit } from "process";
 const log = logfactory("tuya:discovery");
 
 export type DeviceWrapper = {
