@@ -154,6 +154,10 @@ app.get("/", (_, res) => {
   res.send("Hello World!");
 });
 
+app.get("/devices", (_, res) => {
+  res.send(devices);
+});
+
 //if ((import.meta as any).env.PROD)
 app.listen(3000);
 export const viteNodeApp = app;
