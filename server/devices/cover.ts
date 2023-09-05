@@ -51,7 +51,7 @@ export class Cover extends DeviceBase {
 
     const baseSensor = baseData[`${this.type}/${this.name}/config`];
 
-    const topic = getDeviceTopic(this, baseTopic);
+    const topic = getDeviceTopic(baseTopic, this);
 
     const device = {
       ...baseSensor.device,
@@ -74,7 +74,10 @@ export class Cover extends DeviceBase {
   public override stateMessage(dps: DataPointSet) {
     const baseData = super.stateMessage(dps);
 
-    const { state, position, lastMove } = this.getBaseState(dps);
+    const baseState = this.getBaseState(dps);
+    if (!baseState) return baseData;
+
+    const { state, position, lastMove } = baseState;
     return {
       ...baseData,
       [`state`]: state,
@@ -85,7 +88,11 @@ export class Cover extends DeviceBase {
 
   override onClientState(dps: DataPointSet) {
     super.onClientState(dps);
-    const { state, position, lastMove } = this.getBaseState(dps);
+    const baseState = this.getBaseState(dps);
+
+    if (!baseState) return;
+    
+    const { state, position, lastMove } = baseState;
     
     this.state = state ?? this.state;
     this.position = position ?? this.position;

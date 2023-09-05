@@ -83,6 +83,6 @@ export function findByTopic(
   return devices.find(
     (d) =>
       !!d.device &&
-      `${topic}/`.startsWith(`${getDeviceTopic(d.device, baseTopic)}/`)
+      `${topic}/`.startsWith(`${getDeviceTopic(baseTopic, d.device)}/`)
   );
 }

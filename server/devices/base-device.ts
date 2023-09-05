@@ -141,7 +141,7 @@ export class DeviceBase extends TypedEventEmitter<DeviceCallbacks> {
   }
 
   public discoveryMessage(baseTopic: string): Record<string, EntityDiscovery> {
-    const deviceTopic = getDeviceTopic(this, baseTopic);
+    const deviceTopic = getDeviceTopic(baseTopic, this);
     const devData = deviceData(
       this.options.id + (this.options.idSuffix ?? ""),
       this.displayName
@@ -187,6 +187,8 @@ export class DeviceBase extends TypedEventEmitter<DeviceCallbacks> {
       this.setClientState(sensorCommand);
       return true;
     }
+
+    return false;
   }
 
   protected setClientState(message: DataPointSet) {
@@ -244,9 +246,14 @@ export function mapDps(
   return result;
 }
 
-export function getDeviceTopic(device: DeviceBase, baseTopic: string) {
+export function getDeviceTopic(baseTopic: string, device: DeviceBase | string) {
+  if (typeof device === "string") {
+    return `${baseTopic}/${device}`;  
+  }
   return `${baseTopic}/${device.name}`;
 }
+
+
 
 export function commandToDps(
   sensors: Sensor[],

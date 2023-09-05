@@ -89,8 +89,8 @@ const onDeviceState = async (
   dps: DataPointSet,
   deviceWrapper: DeviceWrapper
 ) => {
-  const { device } = deviceWrapper;
-  await publishDeviceState(device, dps);
+  const { device, config } = deviceWrapper;
+  await publishDeviceState(device, config.name, dps);
 };
 
 listenToBroadcast(devices, onDeviceDiscovery, onDeviceState);
@@ -98,14 +98,13 @@ listenToBroadcast(devices, onDeviceDiscovery, onDeviceState);
 mqttClient.on("message", (topic, payload, packet) => {
   if (topic === config.homeassistant.status_topic) {
     devices.forEach((deviceWrapper) => {
-      const { device } = deviceWrapper;
-      if (!device) return;
-      publishDeviceDiscovery(device);
-      publishDeviceState(device);
+      const { device, config } = deviceWrapper;
+      if (device) publishDeviceDiscovery(device);
+      publishDeviceState(device, config.name);
     });
     return;
   }
-  
+
   const regex = new RegExp(
     `^${config.homeassistant.device_topic}/(?<device_id>[^/]+)/(?<command>.+)`
   );
@@ -127,7 +126,11 @@ mqttClient.on("message", (topic, payload, packet) => {
   mqttlog("MQTT message", topic, payload.toString(), packet);
 
   try {
-    const found = findByTopic(devices, config.homeassistant.device_topic, topic);
+    const found = findByTopic(
+      devices,
+      config.homeassistant.device_topic,
+      topic
+    );
     if (!found) {
       mqttlog("Device not found for topic", topic);
       return;
@@ -162,10 +165,20 @@ app.get("/devices", (_, res) => {
 app.listen(3000);
 export const viteNodeApp = app;
 
-async function publishDeviceState(device: DeviceBase, dps?: DataPointSet) {
-  const stateMessage = !!dps ? device.stateMessage(dps) : device.fullStateMessage();
+async function publishDeviceState(device: DeviceBase | undefined, name: string, dps?: DataPointSet) {
+  const stateMessage = !device
+    ? {
+        [`status`]: "offline",
+      }
+    : !!dps
+    ? device.stateMessage(dps)
+    : device.fullStateMessage();
+
   for (const [subTopic, payload] of Object.entries(stateMessage)) {
-    const topic = getDeviceTopic(device, config.homeassistant.device_topic) + "/" + subTopic;
+    const topic =
+      getDeviceTopic(config.homeassistant.device_topic, device || name) +
+      "/" +
+      subTopic;
     await mqttClient.publishAsync(
       topic,
       payload instanceof Object ? JSON.stringify(payload) : `${payload}`
@@ -174,7 +187,9 @@ async function publishDeviceState(device: DeviceBase, dps?: DataPointSet) {
 }
 
 function publishDeviceDiscovery(device: DeviceBase) {
-  const discoveryMessages = device.discoveryMessage(config.homeassistant.device_topic);
+  const discoveryMessages = device.discoveryMessage(
+    config.homeassistant.device_topic
+  );
 
   for (const [topic, payload] of Object.entries(discoveryMessages)) {
     mqttClient.publishAsync(
@@ -183,4 +198,3 @@ function publishDeviceDiscovery(device: DeviceBase) {
     );
   }
 }
-
