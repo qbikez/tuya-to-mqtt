@@ -44,7 +44,7 @@ export class Switch extends DeviceBase {
   override discoveryMessage(
     baseTopic: string
   ): Record<string, EntityDiscovery> {
-    const deviceTopic = getDeviceTopic(this, baseTopic);
+    const deviceTopic = getDeviceTopic(baseTopic, this);
     const baseDiscovery = discoveryData(deviceTopic, this.name);
     const baseData = super.discoveryMessage(baseTopic);
     const devData = deviceData(

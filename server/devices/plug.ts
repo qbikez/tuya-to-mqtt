@@ -137,7 +137,7 @@ export class Plug extends Switch {
   }
 
   override discoveryMessage(baseTopic: string) {
-    var deviceTopic = getDeviceTopic(this, baseTopic);
+    var deviceTopic = getDeviceTopic(baseTopic, this);
     const discovery = discoveryData(deviceTopic, this.name);
     const device = deviceData(
       this.options.id + (this.options.idSuffix ?? ""),
