@@ -51,7 +51,7 @@ export function listenToBroadcast(
       });
     }
     if (device.client && !device.client.connected) {
-      log(`connecting device ${device.config.name} at ${device.config.ip}`);
+      log(`connecting device ${device.config.name} (${device.config.version}) at ${device.config.ip}`);
       device.client.connect({
         enableHeartbeat: true, // heartbeat is needed to keep the connection alive
         updateOnConnect: true,
