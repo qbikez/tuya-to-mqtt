@@ -36,6 +36,12 @@ export class Cover extends DeviceBase {
         type: "switch",
       },
       {
+        dpId: "1",
+        identifier: "switch_1",
+        values: [true, false],
+        type: "sensor",
+      },
+      {
         dpId: "7",
         identifier: "backlight",
         values: [true, false],
