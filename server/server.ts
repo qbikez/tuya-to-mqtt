@@ -14,6 +14,9 @@ import * as fs from "fs";
 const log = logfactory("tuya:server");
 const mqttlog = logfactory("tuya:mqtt");
 
+console.log("starting...");
+log("starting...");
+
 const defaultConfig = {
   mqtt: {
     host: "127.0.0.1",
