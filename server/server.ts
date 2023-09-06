@@ -26,6 +26,9 @@ const defaultConfig = {
     device_topic: "tuya",
     status_topic: "homeassistant/status",
   },
+  service: {
+    republish_period: 60,
+  },
 };
 
 type Config = typeof defaultConfig;
@@ -97,11 +100,7 @@ listenToBroadcast(devices, onDeviceDiscovery, onDeviceState);
 
 mqttClient.on("message", (topic, payload, packet) => {
   if (topic === config.homeassistant.status_topic) {
-    devices.forEach((deviceWrapper) => {
-      const { device, config } = deviceWrapper;
-      if (device) publishDeviceDiscovery(device);
-      publishDeviceState(device, config.name);
-    });
+    publishAllDevices();
     return;
   }
 
@@ -165,7 +164,23 @@ app.get("/devices", (_, res) => {
 app.listen(3000);
 export const viteNodeApp = app;
 
-async function publishDeviceState(device: DeviceBase | undefined, name: string, dps?: DataPointSet) {
+setInterval(() => {
+  publishAllDevices();
+}, config.service.republish_period * 1000);
+
+function publishAllDevices() {
+  devices.forEach((deviceWrapper) => {
+    const { device, config } = deviceWrapper;
+    if (device) publishDeviceDiscovery(device);
+    publishDeviceState(device, config.name);
+  });
+}
+
+async function publishDeviceState(
+  device: DeviceBase | undefined,
+  name: string,
+  dps?: DataPointSet
+) {
   const stateMessage = !device
     ? {
         [`status`]: "offline",
@@ -181,7 +196,12 @@ async function publishDeviceState(device: DeviceBase | undefined, name: string, 
       subTopic;
     await mqttClient.publishAsync(
       topic,
-      payload instanceof Object ? JSON.stringify(payload) : `${payload}`
+      payload instanceof Object ? JSON.stringify(payload) : `${payload}`,
+      {
+        properties: {
+          messageExpiryInterval: config.service.republish_period * 2,
+        },
+      }
     );
   }
 }
