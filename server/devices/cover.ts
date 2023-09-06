@@ -27,21 +27,21 @@ export class Cover extends DeviceBase {
     super(options, client);
   }
 
-  protected override getSensors(): Record<string, Sensor> {
-    const sensors: Record<string, Sensor> = {
-      "1": {
+  protected override getSensors(): Sensor[] {
+    const sensors: Sensor[] = [
+      {
         dpId: "1",
         identifier: "switch_1",
         values: [true, false],
         type: "switch",
       },
-      "7": {
+      {
         dpId: "7",
         identifier: "backlight",
         values: [true, false],
         type: "switch",
       },
-    };
+    ];
 
     return sensors;
   }
@@ -91,9 +91,9 @@ export class Cover extends DeviceBase {
     const baseState = this.getBaseState(dps);
 
     if (!baseState) return;
-    
+
     const { state, position, lastMove } = baseState;
-    
+
     this.state = state ?? this.state;
     this.position = position ?? this.position;
     this.lastMove = lastMove ?? this.lastMove;

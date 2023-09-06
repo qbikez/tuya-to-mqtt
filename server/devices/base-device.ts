@@ -81,7 +81,7 @@ export class DeviceBase extends TypedEventEmitter<DeviceCallbacks> {
   ): Record<string, EntityDiscovery> {
     const sensorDiscovery = {};
 
-    Object.entries(this.getSensors()).forEach(([key, sensor]) => {
+    this.getSensors().forEach((sensor) => {
       const entityType = sensor.type ?? "sensor";
       const sensorTopic = `${entityType}/${this.name}/${sensor.identifier}/config`;
 
@@ -131,11 +131,11 @@ export class DeviceBase extends TypedEventEmitter<DeviceCallbacks> {
         return {
           command_topic: `${deviceTopic}/set_${sensor.identifier}`,
         };
-      case "sensor": 
-      return {
-        device_class: sensor.device_class,
-        expire_after: 120000,
-      }
+      case "sensor":
+        return {
+          device_class: sensor.device_class,
+          expire_after: 120000,
+        };
       default:
         return {};
     }
@@ -209,36 +209,38 @@ export class DeviceBase extends TypedEventEmitter<DeviceCallbacks> {
     this.client.update();
   }
 
-  protected getSensors(): Record<string, Sensor> {
-    return {};
+  protected getSensors(): Sensor[] {
+    return [];
   }
 }
 
 export function mapDps(
   dps: DataPointSet,
-  sensors: Record<string, Sensor>,
+  sensors: Sensor[],
   includeUnknown = false
 ): StateMessage {
   const result: StateMessage = {};
   for (const [dp, value] of Object.entries(dps)) {
-    const sensor = sensors[dp];
-    if (sensor) {
-      const sensorType = sensor.type ?? "sensor";
-      switch (sensorType) {
-        case "number":
-        case "sensor":
-          const numberValue = value as number;
-          const scaledValue = sensor.scale
-            ? numberValue / Math.pow(10, sensor.scale)
-            : value;
-          result[sensor.identifier] = scaledValue;
-          break;
-        case "switch":
-          result[sensor.identifier] = value ? "ON" : "OFF";
-          break;
-        default:
-          result[sensor.identifier] = value;
-          break;
+    const matchingSensors = sensors.filter((s) => s.dpId === dp);
+    if (matchingSensors.length > 0) {
+      for (const sensor of matchingSensors) {
+        const sensorType = sensor.type ?? "sensor";
+        switch (sensorType) {
+          case "number":
+          case "sensor":
+            const numberValue = value as number;
+            const scaledValue = sensor.scale
+              ? numberValue / Math.pow(10, sensor.scale)
+              : value;
+            result[sensor.identifier] = scaledValue;
+            break;
+          case "switch":
+            result[sensor.identifier] = value ? "ON" : "OFF";
+            break;
+          default:
+            result[sensor.identifier] = value;
+            break;
+        }
       }
     } else if (includeUnknown) {
       result[dp] = value;
@@ -249,12 +251,10 @@ export function mapDps(
 
 export function getDeviceTopic(baseTopic: string, device: DeviceBase | string) {
   if (typeof device === "string") {
-    return `${baseTopic}/${device}`;  
+    return `${baseTopic}/${device}`;
   }
   return `${baseTopic}/${device.name}`;
 }
-
-
 
 export function commandToDps(
   sensors: Sensor[],

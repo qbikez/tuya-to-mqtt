@@ -38,8 +38,8 @@ export class Switch extends DeviceBase {
   }
 
   private getMainState(dps: DataPointSet): SwitchState | undefined {
-    if (dps["1"] === undefined ) return undefined;
-    
+    if (dps["1"] === undefined) return undefined;
+
     const mainState = dps["1"] as boolean;
 
     return mainState === true ? "ON" : "OFF";
@@ -76,15 +76,15 @@ export class Switch extends DeviceBase {
     };
   }
 
-  protected override getSensors(): Record<string, Sensor> {
-    const sensors: Record<string, Sensor> = {
-      "1": {
+  protected override getSensors(): Sensor[] {
+    const sensors: Sensor[] = [
+      {
         dpId: "1",
         identifier: "switch_1",
         values: [true, false],
         type: "switch",
       },
-      "9": {
+      {
         dpId: "9",
         identifier: "countdown_1",
         values: [0, 86400],
@@ -93,7 +93,7 @@ export class Switch extends DeviceBase {
         unit: "seconds",
         type: "number",
       },
-      "7": {
+      {
         dpId: "7",
         identifier: "countdown_2",
         values: [0, 86400],
@@ -102,12 +102,12 @@ export class Switch extends DeviceBase {
         unit: "seconds",
         type: "number",
       },
-      "14": {
+      {
         dpId: "14",
         identifier: "relay_status",
         values: ["off", "on", "memory"],
       },
-    };
+    ];
 
     return sensors;
   }
