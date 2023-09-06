@@ -133,7 +133,8 @@ export class DeviceBase extends TypedEventEmitter<DeviceCallbacks> {
         };
       case "sensor": 
       return {
-        device_class: sensor.device_class
+        device_class: sensor.device_class,
+        expire_after: 120000,
       }
       default:
         return {};
