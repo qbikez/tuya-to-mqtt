@@ -30,7 +30,11 @@ export class Switch extends DeviceBase {
 
   override onClientState(dps: DataPointSet) {
     super.onClientState(dps);
-    this.state = this.getMainState(dps);
+    const state = this.getMainState(dps);
+
+    if (state) {
+      this.state = state;
+    }
   }
 
   private getMainState(dps: DataPointSet): SwitchState | undefined {
