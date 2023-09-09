@@ -160,6 +160,27 @@ app.get("/", (_, res) => {
 });
 
 app.get("/devices", (_, res) => {
+  res.send(
+    devices.map((d) => ({
+      config: d.config,
+      lastseen: d.lastSeen,
+      client: {
+        ip: d.client?.ip,
+        port: d.client?.port,
+        version: d.client?.version,
+        connected: d.client?.connected,
+        connecting: d.client?.connecting(),
+      },
+      device: {
+        displayName: d.device?.displayName,
+        lastStateChange: d.device?.lastStateChange,
+        dps: d.device?.dps,
+      }
+    }))
+  );
+});
+
+app.get("/devices/debug", (_, res) => {
   res.send(devices);
 });
 

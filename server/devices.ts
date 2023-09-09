@@ -13,16 +13,18 @@ const log = logfactory("tuya:discovery");
 
 export type DeviceWrapper = {
   config: DeviceConfig;
+  
+  lastSeen?: Date;
   client?: TuyaDevice;
   device?: DeviceBase;
 };
 
-export function initDevices(configPath: string) {
+export function initDevices(configPath: string): DeviceWrapper[] {
   const content = fs.readFileSync(configPath, "utf-8");
   const config = JSON.parse(content) as DeviceConfig[];
 
   return config.map((opts) => {
-    return { config: opts } as DeviceWrapper;
+    return { config: opts };
   });
 }
 
@@ -39,8 +41,17 @@ export function listenToBroadcast(
       return;
     }
 
+    device.lastSeen = new Date();
+    if (device.config.ip && device.config.ip !== msg.ip) {
+      log(`${device.config.name}: IP changed`, device.config.ip, msg.ip);
+    }
     device.config.ip = msg.ip;
-    device.config.version ??= parseFloat(msg.version);
+
+    const messageVersion = parseFloat(msg.version);
+    if (device.config.version && messageVersion != device.config.version) {
+      log(`${device.config.name}: message version ${messageVersion} doesn't match configured: ${device.config.version}`);
+    }
+    device.config.version ??= messageVersion;
 
     if (!device.client) {
       log(`discovered NEW device ${device.config.name} at ${device.config.ip}`);
