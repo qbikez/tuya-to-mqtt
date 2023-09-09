@@ -82,7 +82,7 @@ mqttClient.on("close", () => {
 
 log("starting device dicsovery");
 
-const devices = initDevices("config/devices.json");
+let devices = initDevices("config/devices.json");
 
 const onDeviceDiscovery = async (deviceWrapper: DeviceWrapper) => {
   const { device } = deviceWrapper;
@@ -182,6 +182,15 @@ app.get("/devices", (_, res) => {
 
 app.get("/devices/debug", (_, res) => {
   res.send(devices);
+});
+
+app.post("/reset", (_, res) => {
+  while(devices.length > 0) {
+    const device = devices.pop();
+    device?.client?.disconnect();
+  }
+  devices = initDevices("config/devices.json");
+  res.send("ok");
 });
 
 //if ((import.meta as any).env.PROD)
