@@ -34,6 +34,9 @@ export function listenToBroadcast(
   onDeviceState: (state: DataPointSet, device: DeviceWrapper) => Promise<void>
 ) {
   const find = new Find();
+  find.on("error", (err) => {
+    console.error("error in Find:", err);
+  });
   find.on("broadcast", (msg) => {
     const device = devices.find((d) => d.config.id == msg.gwId);
     if (!device) {
